@@ -10,11 +10,14 @@ import {
   type PreviewConfig,
 } from "@/components/site/previewer-types";
 import { configToSearchParams, parseConfig } from "@/components/site/previewer-url";
+import { SITE_URL } from "@/lib/site";
 
 const TITLE = "Custom Acrylic Boat Name Lettering | Georgian Bay | A1 Marine Care";
 const DESCRIPTION =
   "Dimensional cast acrylic boat name lettering and marine ceramic detailing in Midland and across Georgian Bay. Featuring Holy Ship, a Meridian 408 Motoryacht.";
-const OG_IMAGE = "/images/transom-hero.jpg";
+// Absolute URLs — social scrapers and canonical tags need the full origin.
+const OG_IMAGE = `${SITE_URL}/images/transom-hero.jpg`;
+const CANONICAL = `${SITE_URL}/`;
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -26,12 +29,12 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
       { property: "og:image", content: OG_IMAGE },
-      { property: "og:url", content: "/" },
+      { property: "og:url", content: CANONICAL },
       { name: "twitter:title", content: TITLE },
       { name: "twitter:description", content: DESCRIPTION },
       { name: "twitter:image", content: OG_IMAGE },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [{ rel: "canonical", href: CANONICAL }],
     scripts: [
       {
         type: "application/ld+json",
@@ -42,6 +45,7 @@ export const Route = createFileRoute("/")({
               "@type": "LocalBusiness",
               name: "A1 Marine Care",
               image: OG_IMAGE,
+              // TODO(NAP): placeholder — replace with A1 Marine Care's real phone before launch.
               telephone: "+1-705-000-0000",
               address: {
                 "@type": "PostalAddress",
@@ -50,7 +54,7 @@ export const Route = createFileRoute("/")({
                 addressCountry: "CA",
               },
               areaServed: ["Georgian Bay", "Muskoka", "Lake Simcoe", "Trent-Severn Waterway"],
-              url: "https://holyship.a1marinecare.ca/",
+              url: CANONICAL,
             },
             {
               "@type": "Service",
@@ -188,12 +192,17 @@ function Index() {
       <Section id="boat" eyebrow="THE BOAT" title="Meridian 408 Motoryacht">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_1.2fr]">
           <div>
+            {/* TODO(content): unverified claims about a real customer's boat/owner — the private
+                slip north of Midland, the regular North Channel runs, and "ten seasons" since the
+                last polish were AI-invented. Confirm or correct before launch. */}
             <p className="text-[color:var(--gelcoat)]/80">
               Twin-inboard flybridge motoryacht built for extended weekends on the Bay. The owner
               keeps her at a private slip north of Midland and runs her regularly to the North
               Channel. When we took her on she was ten seasons of sun and dock-side spray past her
               last polish.
             </p>
+            {/* TODO(content): spec values are Meridian 408 model-line approximations — verify LOA,
+                beam, power, and hull colour against the actual hull. */}
             <dl className="dashed-rule mt-10 grid grid-cols-2 gap-y-4 border-b border-transparent pb-6 font-mono text-xs">
               {[
                 ["LOA", `42' 8"`],
