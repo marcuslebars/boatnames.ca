@@ -10,7 +10,14 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { reportError } from "../lib/report-error";
+
+const SITE_URL =
+  (import.meta.env.VITE_SITE_URL as string | undefined) ?? "https://holyship.a1marinecare.ca";
+const SITE_TITLE = "Custom Acrylic Boat Name Lettering | Georgian Bay | A1 Marine Care";
+const SITE_DESCRIPTION =
+  "Dimensional cast acrylic boat name lettering and marine ceramic detailing in Midland and across Georgian Bay. Featuring Holy Ship, a Meridian 408 Motoryacht.";
+const OG_IMAGE = `${SITE_URL}/images/transom-hero.jpg`;
 
 function NotFoundComponent() {
   return (
@@ -38,7 +45,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    reportError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
   return (
@@ -81,14 +88,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:site_name", content: "A1 Marine Care" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { title: "Holy Ship" },
-      { property: "og:title", content: "Holy Ship" },
-      { name: "twitter:title", content: "Holy Ship" },
-      { name: "description", content: "A1 Marine Care - Holy Ship project" },
-      { property: "og:description", content: "A1 Marine Care - Holy Ship project" },
-      { name: "twitter:description", content: "A1 Marine Care - Holy Ship project" },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/dcbead28-cfad-4489-b07c-009f12a313f8/id-preview-fbec867c--cd49aad2-aaf3-4564-b5b4-7c98cf53a811.lovable.app-1784982381327.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/dcbead28-cfad-4489-b07c-009f12a313f8/id-preview-fbec867c--cd49aad2-aaf3-4564-b5b4-7c98cf53a811.lovable.app-1784982381327.png" },
+      { title: SITE_TITLE },
+      { property: "og:title", content: SITE_TITLE },
+      { name: "twitter:title", content: SITE_TITLE },
+      { name: "description", content: SITE_DESCRIPTION },
+      { property: "og:description", content: SITE_DESCRIPTION },
+      { name: "twitter:description", content: SITE_DESCRIPTION },
+      { property: "og:image", content: OG_IMAGE },
+      { name: "twitter:image", content: OG_IMAGE },
     ],
     links: [
       {
