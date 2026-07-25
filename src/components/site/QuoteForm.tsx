@@ -50,7 +50,7 @@ export function QuoteForm({ prefill }: Props) {
     return (
       <div className="rounded-sm border border-[color:var(--polish)]/50 bg-[color:var(--polish)]/5 p-8">
         <p className="font-mono text-[10px] tracking-widest text-[color:var(--polish)]">RECEIVED</p>
-        <h3 className="mt-3 font-[family-name:var(--font-display)] text-3xl font-bold uppercase tracking-tight text-[color:var(--gelcoat)]">
+        <h3 className="mt-3 font-sans text-3xl font-bold uppercase tracking-tight text-[color:var(--gelcoat)]">
           We'll send a proof and a price within one business day.
         </h3>
         <p className="mt-3 max-w-xl text-[color:var(--wake)]">
@@ -137,7 +137,7 @@ export function QuoteForm({ prefill }: Props) {
         <button
           type="submit"
           disabled={status === "sending"}
-          className="inline-flex items-center justify-center gap-3 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-6 py-3 font-mono text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90 disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-3 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-6 py-3 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90 disabled:opacity-60"
         >
           {status === "sending" ? "SENDING…" : "REQUEST A QUOTE →"}
         </button>

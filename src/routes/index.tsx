@@ -4,7 +4,11 @@ import { ImgSlot } from "@/components/site/ImgSlot";
 import { BeforeAfterSlider } from "@/components/site/BeforeAfterSlider";
 import { TransomPreviewer } from "@/components/site/TransomPreviewer";
 import { QuoteForm } from "@/components/site/QuoteForm";
-import { FINISH_OPTIONS, type PreviewConfig } from "@/components/site/previewer-types";
+import {
+  FINISH_OPTIONS,
+  FONT_OPTIONS,
+  type PreviewConfig,
+} from "@/components/site/previewer-types";
 
 const TITLE = "Custom Acrylic Boat Name Lettering | Georgian Bay | A1 Marine Care";
 const DESCRIPTION =
@@ -71,6 +75,10 @@ function Index() {
     size: 8,
   });
 
+  // The hero renders the boat name in the currently-selected acrylic face, so
+  // it doubles as a live sample of the previewer's font choice.
+  const heroFont = FONT_OPTIONS.find((f) => f.key === config.font) ?? FONT_OPTIONS[0];
+
   // Reveal-on-scroll for sections
   useEffect(() => {
     const els = document.querySelectorAll<HTMLElement>(".reveal");
@@ -128,7 +136,10 @@ function Index() {
             <p className="anim-rise anim-delay-1 font-mono text-[11px] tracking-[0.28em] text-[color:var(--polish)]">
               A1 MARINE CARE · REFERENCE JOB Nº 01
             </p>
-            <h1 className="anim-rise anim-delay-2 mt-6 font-[family-name:var(--font-signage)] text-6xl leading-[0.9] tracking-tight text-[color:var(--gelcoat)] sm:text-8xl md:text-9xl">
+            <h1
+              className="anim-rise anim-delay-2 mt-6 text-6xl leading-[0.9] tracking-tight text-[color:var(--gelcoat)] sm:text-8xl md:text-9xl"
+              style={{ fontFamily: heroFont.css, fontWeight: heroFont.weight }}
+            >
               Holy <span className="text-mirror-gold">Ship</span>
             </h1>
             <p className="anim-rise anim-delay-3 mt-6 max-w-xl text-lg text-[color:var(--gelcoat)]/85">
@@ -138,13 +149,13 @@ function Index() {
             <div className="anim-rise anim-delay-4 mt-10 flex flex-wrap gap-3">
               <button
                 onClick={() => scrollTo("previewer")}
-                className="inline-flex items-center gap-3 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-5 py-3 font-mono text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90"
+                className="inline-flex items-center gap-3 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-5 py-3 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90"
               >
                 DESIGN YOUR BOAT NAME →
               </button>
               <button
                 onClick={() => scrollTo("condition")}
-                className="inline-flex items-center gap-3 rounded-sm border border-[color:var(--gelcoat)]/25 px-5 py-3 font-mono text-[11px] font-semibold tracking-[0.2em] text-[color:var(--gelcoat)] transition hover:border-[color:var(--gelcoat)]/60"
+                className="inline-flex items-center gap-3 rounded-sm border border-[color:var(--gelcoat)]/25 px-5 py-3 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--gelcoat)] transition hover:border-[color:var(--gelcoat)]/60"
               >
                 SEE THE DETAIL WORK
               </button>
@@ -251,9 +262,7 @@ function Index() {
                   {n}
                 </span>
                 <div>
-                  <h3 className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase tracking-tight">
-                    {title}
-                  </h3>
+                  <h3 className="font-sans text-2xl font-bold uppercase tracking-tight">{title}</h3>
                   <p className="mt-2 text-sm text-[color:var(--gelcoat)]/75">{desc}</p>
                 </div>
               </li>
@@ -350,7 +359,7 @@ function Index() {
             <p className="font-mono text-[11px] tracking-[0.28em] text-[color:var(--polish)]">
               THE PREVIEWER
             </p>
-            <h2 className="mt-4 max-w-3xl font-[family-name:var(--font-display)] text-5xl font-bold uppercase leading-[0.95] tracking-tight sm:text-6xl">
+            <h2 className="mt-4 max-w-3xl font-sans text-5xl font-bold uppercase leading-[0.95] tracking-tight sm:text-6xl">
               Type your name. See it on a transom.
             </h2>
             <p className="mt-4 max-w-xl text-[color:var(--gelcoat)]/75">
@@ -397,9 +406,7 @@ function Index() {
               <span className="font-mono text-xs tracking-widest text-[color:var(--polish)]">
                 {n}
               </span>
-              <h3 className="mt-3 font-[family-name:var(--font-display)] text-2xl font-bold uppercase tracking-tight">
-                {t}
-              </h3>
+              <h3 className="mt-3 font-sans text-2xl font-bold uppercase tracking-tight">{t}</h3>
               <p className="mt-2 text-sm text-[color:var(--gelcoat)]/75">{d}</p>
             </div>
           ))}
@@ -416,7 +423,7 @@ function Index() {
             <p className="font-mono text-[11px] tracking-[0.28em] text-[color:var(--polish)]">
               QUOTE
             </p>
-            <h2 className="mt-4 max-w-3xl font-[family-name:var(--font-display)] text-5xl font-bold uppercase leading-[0.95] tracking-tight sm:text-6xl">
+            <h2 className="mt-4 max-w-3xl font-sans text-5xl font-bold uppercase leading-[0.95] tracking-tight sm:text-6xl">
               Send us your transom.
             </h2>
             <p className="mt-4 max-w-xl text-[color:var(--gelcoat)]/75">
@@ -436,7 +443,7 @@ function Index() {
       {showStickyCta && (
         <button
           onClick={() => scrollTo("quote")}
-          className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-4 py-3 font-mono text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] shadow-lg lg:hidden"
+          className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-4 py-3 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] shadow-lg lg:hidden"
         >
           GET A QUOTE →
         </button>
@@ -455,7 +462,7 @@ function Header({ showCta, onQuote }: { showCta: boolean; onQuote: () => void })
             HOLY SHIP · A1 MARINE CARE
           </span>
         </a>
-        <nav className="hidden items-center gap-6 font-mono text-[11px] tracking-widest text-[color:var(--wake)] md:flex">
+        <nav className="hidden items-center gap-6 font-sans text-[11px] tracking-widest text-[color:var(--wake)] md:flex">
           <a href="#boat" className="hover:text-[color:var(--gelcoat)]">
             THE BOAT
           </a>
@@ -471,7 +478,7 @@ function Header({ showCta, onQuote }: { showCta: boolean; onQuote: () => void })
         </nav>
         <button
           onClick={onQuote}
-          className={`hidden items-center gap-2 rounded-sm border border-[color:var(--polish)] px-3 py-2 font-mono text-[11px] font-semibold tracking-[0.2em] text-[color:var(--polish)] transition lg:inline-flex ${
+          className={`hidden items-center gap-2 rounded-sm border border-[color:var(--polish)] px-3 py-2 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--polish)] transition lg:inline-flex ${
             showCta ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
@@ -507,7 +514,7 @@ function Section({
           <p className="font-mono text-[11px] tracking-[0.28em] text-[color:var(--polish)]">
             {eyebrow}
           </p>
-          <h2 className="mt-4 max-w-3xl font-[family-name:var(--font-display)] text-5xl font-bold uppercase leading-[0.95] tracking-tight sm:text-6xl">
+          <h2 className="mt-4 max-w-3xl font-sans text-5xl font-bold uppercase leading-[0.95] tracking-tight sm:text-6xl">
             {title}
           </h2>
         </div>
@@ -524,7 +531,7 @@ function Footer() {
         <div className="lg:col-span-2">
           <div className="flex items-center gap-3">
             <img src="/favicon.png" alt="A1 Marine Care" className="h-9 w-9 object-contain" />
-            <span className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-tight text-[color:var(--gelcoat)]">
+            <span className="font-sans text-xl font-bold uppercase tracking-tight text-[color:var(--gelcoat)]">
               A1 Marine Care
             </span>
           </div>

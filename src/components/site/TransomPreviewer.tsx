@@ -207,7 +207,7 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
         <button
           type="button"
           onClick={onQuote}
-          className="mt-2 inline-flex items-center justify-center gap-3 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-5 py-3 font-mono text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90"
+          className="mt-2 inline-flex items-center justify-center gap-3 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-5 py-3 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90"
         >
           GET THIS QUOTED →
         </button>
