@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FINISH_OPTIONS, FONT_OPTIONS, type PreviewConfig } from "./previewer-types";
+import { previewShareUrl } from "./previewer-url";
+import { CONSENT_TEXT, HONEYPOT_FIELD, quoteSchema, TIMING_FIELD } from "./quote-schema";
 
 type Props = {
   prefill: PreviewConfig;
@@ -7,42 +9,80 @@ type Props = {
 
 type Status = "idle" | "sending" | "ok" | "error";
 
+// Post to our own server route (never straight to an external intake) so the
+// HMAC secret and forwarding stay server-side. A missing/broken endpoint fails
+// loudly here — there is no fake-success fallback.
+const ENDPOINT = "/api/quote";
+
 export function QuoteForm({ prefill }: Props) {
   const [status, setStatus] = useState<Status>("idle");
-  const [errMsg, setErrMsg] = useState<string>("");
+  const [errMsg, setErrMsg] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [shareUrl, setShareUrl] = useState("");
+  const startedAt = useRef<number>(0);
+
+  // Start the anti-bot fill timer once the form is interactive.
+  useEffect(() => {
+    startedAt.current = Date.now();
+  }, []);
+
+  // Shareable preview URL needs window.origin, so compute it on the client.
+  useEffect(() => {
+    setShareUrl(previewShareUrl(prefill, window.location.origin));
+  }, [prefill]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("sending");
     setErrMsg("");
+    setFieldErrors({});
     const form = e.currentTarget;
     const fd = new FormData(form);
-    const payload: Record<string, unknown> = {};
+
+    // Client-side validation mirrors the server schema (the server re-validates).
+    const record: Record<string, unknown> = {};
     fd.forEach((v, k) => {
-      if (v instanceof File) {
-        if (v.size > 0) payload[k] = { name: v.name, size: v.size, type: v.type };
-      } else {
-        payload[k] = v;
-      }
+      if (!(v instanceof File)) record[k] = v;
     });
-    const endpoint = (import.meta.env.VITE_LEAD_ENDPOINT as string | undefined) ?? "";
+    const parsed = quoteSchema.safeParse(record);
+    if (!parsed.success) {
+      const fe: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0] ?? "");
+        if (key && !fe[key]) fe[key] = issue.message;
+      }
+      setFieldErrors(fe);
+      setStatus("error");
+      setErrMsg("Please fix the highlighted fields and try again.");
+      return;
+    }
+
+    // Metadata recorded with the lead (multipart carries the photo file itself).
+    fd.set(TIMING_FIELD, String(startedAt.current));
+    fd.set("preview_url", shareUrl);
+    fd.set("consent_text", CONSENT_TEXT);
+    fd.set("source", "holyship.a1marinecare.ca");
+
     try {
-      if (!endpoint) {
-        // No endpoint configured: simulate success locally so the UI still works.
-        await new Promise((r) => setTimeout(r, 600));
-      } else {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...payload, source: "holyship.a1marinecare.ca" }),
-        });
-        if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      const res = await fetch(ENDPOINT, { method: "POST", body: fd });
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try {
+          const body = (await res.json()) as { error?: string };
+          if (body?.error) detail = body.error;
+        } catch {
+          // non-JSON error body; keep the status code
+        }
+        console.error("Quote submission failed:", detail);
+        throw new Error(detail);
       }
       setStatus("ok");
-      form.reset();
     } catch (err) {
+      console.error(err);
       setStatus("error");
-      setErrMsg(err instanceof Error ? err.message : "Something went wrong.");
+      setErrMsg(
+        "We couldn't send that just now. Please try again, or email hello@a1marinecare.ca.",
+      );
     }
   }
 
@@ -57,36 +97,72 @@ export function QuoteForm({ prefill }: Props) {
           If we need a clearer transom photo or a measurement we'll email first before quoting. No
           auto-replies, no drip sequence.
         </p>
-        <button
-          type="button"
-          onClick={() => setStatus("idle")}
-          className="mt-6 font-mono text-[10px] tracking-widest text-[color:var(--polish)] underline underline-offset-4"
-        >
-          SUBMIT ANOTHER →
-        </button>
+        {shareUrl && (
+          <a
+            href={shareUrl}
+            className="mt-6 inline-block font-mono text-[10px] tracking-widest text-[color:var(--polish)] underline underline-offset-4"
+          >
+            REOPEN YOUR DESIGN →
+          </a>
+        )}
+        <div>
+          <button
+            type="button"
+            onClick={() => {
+              setStatus("idle");
+              setFieldErrors({});
+              setErrMsg("");
+            }}
+            className="mt-4 font-mono text-[10px] tracking-widest text-[color:var(--wake)] underline underline-offset-4 hover:text-[color:var(--gelcoat)]"
+          >
+            SUBMIT ANOTHER →
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-      <Input name="name" label="Your name" required />
-      <Input name="email" label="Email" type="email" required />
-      <Input name="phone" label="Phone" type="tel" />
-      <Input name="boat_model" label="Boat make and model" placeholder="e.g. Meridian 408" />
-      <Input name="marina" label="Marina or town" />
-      <Input name="transom_width" label="Transom width (inches)" type="number" min={12} />
-      <Input name="boat_name" label="Boat name wanted" defaultValue={prefill.name} maxLength={18} />
-      <Input name="hailing_port" label="Hailing port (optional)" defaultValue={prefill.port} />
+    <form onSubmit={onSubmit} noValidate className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <Input name="name" label="Your name" required error={fieldErrors.name} />
+      <Input name="email" label="Email" type="email" required error={fieldErrors.email} />
+      <Input name="phone" label="Phone" type="tel" error={fieldErrors.phone} />
+      <Input
+        name="boat_model"
+        label="Boat make and model"
+        placeholder="e.g. Meridian 408"
+        error={fieldErrors.boat_model}
+      />
+      <Input name="marina" label="Marina or town" error={fieldErrors.marina} />
+      <Input
+        name="transom_width"
+        label="Transom width (inches)"
+        type="number"
+        min={12}
+        error={fieldErrors.transom_width}
+      />
+      <Input
+        name="boat_name"
+        label="Boat name wanted"
+        defaultValue={prefill.name}
+        maxLength={18}
+        error={fieldErrors.boat_name}
+      />
+      <Input
+        name="hailing_port"
+        label="Hailing port (optional)"
+        defaultValue={prefill.port}
+        error={fieldErrors.hailing_port}
+      />
 
-      <Select name="font" label="Font" defaultValue={prefill.font}>
+      <Select name="font" label="Font" defaultValue={prefill.font} error={fieldErrors.font}>
         {FONT_OPTIONS.map((f) => (
           <option key={f.key} value={f.key}>
             {f.label}
           </option>
         ))}
       </Select>
-      <Select name="finish" label="Finish" defaultValue={prefill.finish}>
+      <Select name="finish" label="Finish" defaultValue={prefill.finish} error={fieldErrors.finish}>
         {FINISH_OPTIONS.map((f) => (
           <option key={f.key} value={f.key}>
             {f.label}
@@ -122,12 +198,38 @@ export function QuoteForm({ prefill }: Props) {
         <input
           name="photo"
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp,image/heic"
           className="block w-full font-mono text-xs text-[color:var(--wake)] file:mr-4 file:rounded-sm file:border file:border-[color:var(--wake)]/30 file:bg-transparent file:px-3 file:py-2 file:text-[10px] file:tracking-widest file:text-[color:var(--gelcoat)] hover:file:border-[color:var(--polish)]"
         />
         <p className="mt-2 font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
-          A clean square-on photo lets us template without visiting the boat.
+          A clean square-on photo lets us template without visiting the boat. JPG, PNG, WEBP or
+          HEIC, up to 10 MB.
         </p>
+      </div>
+
+      {/* Honeypot: hidden from people, tempting to bots. Must stay empty. */}
+      <div aria-hidden className="hidden">
+        <label>
+          Company
+          <input name={HONEYPOT_FIELD} type="text" tabIndex={-1} autoComplete="off" />
+        </label>
+      </div>
+
+      <div className="sm:col-span-2">
+        <label className="flex items-start gap-3">
+          <input
+            name="consent"
+            type="checkbox"
+            className="mt-1 h-4 w-4 accent-[color:var(--polish)]"
+            aria-invalid={!!fieldErrors.consent}
+          />
+          <span className="text-xs leading-relaxed text-[color:var(--wake)]">{CONSENT_TEXT}</span>
+        </label>
+        {fieldErrors.consent && (
+          <span className="mt-1 block font-mono text-[10px] text-red-400">
+            {fieldErrors.consent}
+          </span>
+        )}
       </div>
 
       <div className="mt-2 flex flex-col gap-3 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
@@ -142,9 +244,12 @@ export function QuoteForm({ prefill }: Props) {
           {status === "sending" ? "SENDING…" : "REQUEST A QUOTE →"}
         </button>
       </div>
-      {status === "error" && (
-        <p className="sm:col-span-2 font-mono text-[10px] tracking-widest text-red-400">
-          COULDN'T SEND — {errMsg.toUpperCase()}
+      {status === "error" && errMsg && (
+        <p
+          className="font-mono text-[10px] tracking-widest text-red-400 sm:col-span-2"
+          role="alert"
+        >
+          {errMsg}
         </p>
       )}
     </form>
@@ -162,24 +267,53 @@ function Label({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
-  const { label, ...rest } = props;
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return (
+    <span id={id} className="mt-1 block font-mono text-[10px] text-red-400">
+      {message}
+    </span>
+  );
+}
+
+function Input(
+  props: React.InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string },
+) {
+  const { label, error, name, ...rest } = props;
+  const errId = error ? `${name}-error` : undefined;
   return (
     <label className="block">
       <Label>{label}</Label>
-      <input {...rest} className={inputCls} />
+      <input
+        name={name}
+        aria-invalid={!!error}
+        aria-describedby={errId}
+        className={`${inputCls} ${error ? "border-red-400/70" : ""}`}
+        {...rest}
+      />
+      <FieldError id={errId ?? ""} message={error} />
     </label>
   );
 }
 
-function Select(props: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string }) {
-  const { label, children, ...rest } = props;
+function Select(
+  props: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string; error?: string },
+) {
+  const { label, error, name, children, ...rest } = props;
+  const errId = error ? `${name}-error` : undefined;
   return (
     <label className="block">
       <Label>{label}</Label>
-      <select {...rest} className={inputCls}>
+      <select
+        name={name}
+        aria-invalid={!!error}
+        aria-describedby={errId}
+        className={`${inputCls} ${error ? "border-red-400/70" : ""}`}
+        {...rest}
+      >
         {children}
       </select>
+      <FieldError id={errId ?? ""} message={error} />
     </label>
   );
 }
