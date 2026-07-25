@@ -11,9 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportError } from "../lib/report-error";
-
-const SITE_URL =
-  (import.meta.env.VITE_SITE_URL as string | undefined) ?? "https://holyship.a1marinecare.ca";
+import { SITE_URL } from "../lib/site";
 const SITE_TITLE = "Custom Acrylic Boat Name Lettering | Georgian Bay | A1 Marine Care";
 const SITE_DESCRIPTION =
   "Dimensional cast acrylic boat name lettering and marine ceramic detailing in Midland and across Georgian Bay. Featuring Holy Ship, a Meridian 408 Motoryacht.";
@@ -119,7 +117,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>

@@ -140,7 +140,7 @@ function Index() {
               className="anim-rise anim-delay-2 mt-6 text-6xl leading-[0.9] tracking-tight text-[color:var(--gelcoat)] sm:text-8xl md:text-9xl"
               style={{ fontFamily: heroFont.css, fontWeight: heroFont.weight }}
             >
-              Holy <span className="text-mirror-gold">Ship</span>
+              Holy <span className="finish-mirror-gold">Ship</span>
             </h1>
             <p className="anim-rise anim-delay-3 mt-6 max-w-xl text-lg text-[color:var(--gelcoat)]/85">
               A Meridian 408 Motoryacht on Georgian Bay. Detailed, ceramic coated, and finished with
