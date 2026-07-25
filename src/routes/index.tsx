@@ -9,6 +9,7 @@ import {
   FONT_OPTIONS,
   type PreviewConfig,
 } from "@/components/site/previewer-types";
+import { configToSearchParams, parseConfig } from "@/components/site/previewer-url";
 
 const TITLE = "Custom Acrylic Boat Name Lettering | Georgian Bay | A1 Marine Care";
 const DESCRIPTION =
@@ -78,6 +79,25 @@ function Index() {
   // The hero renders the boat name in the currently-selected acrylic face, so
   // it doubles as a live sample of the previewer's font choice.
   const heroFont = FONT_OPTIONS.find((f) => f.key === config.font) ?? FONT_OPTIONS[0];
+
+  // Read a shared/bookmarked design from the URL on mount.
+  useEffect(() => {
+    setConfig((c) => parseConfig(window.location.search, c));
+  }, []);
+
+  // Mirror config to the URL (debounced) so a design is shareable and the quote
+  // email can link back to the exact preview.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const qs = configToSearchParams(config).toString();
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}?${qs}${window.location.hash}`,
+      );
+    }, 400);
+    return () => clearTimeout(id);
+  }, [config]);
 
   // Reveal-on-scroll for sections
   useEffect(() => {

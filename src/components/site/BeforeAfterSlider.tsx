@@ -10,8 +10,23 @@ type Props = {
 
 export function BeforeAfterSlider({ beforeSrc, afterSrc, beforeAlt, afterAlt }: Props) {
   const [pos, setPos] = useState(52);
+  const [wrapWidth, setWrapWidth] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
+
+  // Track the wrapper's rendered width so the before-image (inside the clipped
+  // overlay) keeps the full comparison width instead of collapsing. Reading
+  // wrapRef.current.clientWidth during render is null on first paint and never
+  // updates on resize — observe it instead.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const measure = () => setWrapWidth(el.getBoundingClientRect().width);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const setFromClientX = useCallback((clientX: number) => {
     const el = wrapRef.current;
@@ -61,7 +76,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, beforeAlt, afterAlt }: 
         <ImgSlot src={afterSrc} alt={afterAlt} ratio="16/10" className="h-full w-full" />
       </div>
       <div className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${pos}%` }}>
-        <div className="h-full" style={{ width: wrapRef.current?.clientWidth ?? "100%" }}>
+        <div className="h-full" style={{ width: wrapWidth || "100%" }}>
           <ImgSlot src={beforeSrc} alt={beforeAlt} ratio="16/10" className="h-full w-full" />
         </div>
       </div>
