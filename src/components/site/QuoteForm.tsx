@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { estimateRunLengthIn } from "./previewer-measure";
 import { FINISH_OPTIONS, FONT_OPTIONS, type PreviewConfig } from "./previewer-types";
 import { previewShareUrl } from "./previewer-url";
 import { CONSENT_TEXT, HONEYPOT_FIELD, quoteSchema, TIMING_FIELD } from "./quote-schema";
@@ -24,6 +25,17 @@ export function QuoteForm({ prefill }: Props) {
   // Start the anti-bot fill timer once the form is interactive.
   useEffect(() => {
     startedAt.current = Date.now();
+  }, []);
+
+  // Best-effort UTM capture from the landing URL, before the previewer's URL
+  // sync overwrites the query string.
+  const utm = useRef<Record<string, string>>({});
+  useEffect(() => {
+    const collected: Record<string, string> = {};
+    new URLSearchParams(window.location.search).forEach((val, key) => {
+      if (key.startsWith("utm_")) collected[key] = val;
+    });
+    utm.current = collected;
   }, []);
 
   // Shareable preview URL needs window.origin, so compute it on the client.
@@ -62,6 +74,25 @@ export function QuoteForm({ prefill }: Props) {
     fd.set("preview_url", shareUrl);
     fd.set("consent_text", CONSENT_TEXT);
     fd.set("source", "holyship.a1marinecare.ca");
+    for (const [key, val] of Object.entries(utm.current)) fd.set(key, val);
+
+    // Per-font measured run length for the quote + CRM envelope.
+    const fontKey = String(fd.get("font") ?? prefill.font);
+    const fontOpt = FONT_OPTIONS.find((f) => f.key === fontKey) ?? FONT_OPTIONS[0];
+    const wantedName = String(fd.get("boat_name") ?? "").trim() || "YOUR BOAT";
+    const heightIn = Number(fd.get("letter_height") ?? prefill.size);
+    const upper = fontOpt.key !== "yacht-script";
+    fd.set(
+      "run_length",
+      String(
+        estimateRunLengthIn(
+          upper ? wantedName.toUpperCase() : wantedName,
+          fontOpt.css,
+          fontOpt.weight ?? 400,
+          heightIn,
+        ),
+      ),
+    );
 
     try {
       const res = await fetch(ENDPOINT, { method: "POST", body: fd });
@@ -122,8 +153,18 @@ export function QuoteForm({ prefill }: Props) {
     );
   }
 
+  // Key on the design signature so the uncontrolled design fields re-seed from
+  // the CURRENT previewer config (defaultValue only applies on mount, and the
+  // URL hydration updates the config after the first render).
+  const designKey = `${prefill.name}|${prefill.port}|${prefill.font}|${prefill.finish}|${prefill.size}`;
+
   return (
-    <form onSubmit={onSubmit} noValidate className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+    <form
+      key={designKey}
+      onSubmit={onSubmit}
+      noValidate
+      className="grid grid-cols-1 gap-5 sm:grid-cols-2"
+    >
       <Input name="name" label="Your name" required error={fieldErrors.name} />
       <Input name="email" label="Email" type="email" required error={fieldErrors.email} />
       <Input name="phone" label="Phone" type="tel" error={fieldErrors.phone} />

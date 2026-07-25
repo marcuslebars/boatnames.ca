@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { ImgSlot } from "./ImgSlot";
+import { FALLBACK_RATIO, measureRatios, type Ratio } from "./previewer-measure";
 import {
   FINISH_OPTIONS,
   FONT_OPTIONS,
@@ -32,32 +33,6 @@ const PANEL = {
 
 const FONT_KEYS = FONT_OPTIONS.map((f) => f.key);
 const FINISH_KEYS = FINISH_OPTIONS.map((f) => f.key);
-
-// Width/cap-height ratios relative to font-size, used before the client-side
-// canvas measurement runs (and during SSR, where canvas is unavailable).
-const FALLBACK_RATIO = { width: 0.62, cap: 0.72 };
-type Ratio = { width: number; cap: number };
-
-let measureCanvas: HTMLCanvasElement | null = null;
-
-// Measure a string's advance width and cap height for a given face, as fractions
-// of the font-size. This replaces the old flat 0.55-per-letter guess: real glyph
-// advances (and real spaces) are counted, per font, so the run length is defensible.
-function measureRatios(text: string, fontFamily: string, fontWeight: number): Ratio {
-  if (typeof document === "undefined") return FALLBACK_RATIO;
-  measureCanvas ??= document.createElement("canvas");
-  const ctx = measureCanvas.getContext("2d");
-  if (!ctx) return FALLBACK_RATIO;
-  const REF = 100;
-  ctx.font = `${fontWeight} ${REF}px ${fontFamily}`;
-  const m = ctx.measureText(text || "");
-  const width = m.width / REF;
-  const cap = (m.actualBoundingBoxAscent || REF * FALLBACK_RATIO.cap) / REF;
-  return {
-    width: width > 0 ? width : FALLBACK_RATIO.width,
-    cap: cap > 0 ? cap : FALLBACK_RATIO.cap,
-  };
-}
 
 function finishFill(
   ctx: CanvasRenderingContext2D,
