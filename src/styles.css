@@ -218,6 +218,13 @@
     opacity: 1 !important;
     transform: none !important;
   }
+  /* .reveal starts at opacity:0 and only becomes visible via its fade-in
+     animation; suppress the animation AND force it visible so nothing the
+     IntersectionObserver would have revealed is left hidden. */
+  .reveal {
+    opacity: 1 !important;
+    animation: none !important;
+  }
 }
 
 @keyframes rise-in {
