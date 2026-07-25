@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ImgSlot } from "./ImgSlot";
-import {
-  FINISH_OPTIONS,
-  FONT_OPTIONS,
-  type PreviewConfig,
-} from "./previewer-types";
+import { FINISH_OPTIONS, FONT_OPTIONS, type PreviewConfig } from "./previewer-types";
 
 type Props = {
   config: PreviewConfig;
@@ -44,7 +40,10 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.4fr_1fr]">
       {/* Preview canvas */}
-      <div ref={canvasRef} className="relative overflow-hidden rounded-sm border border-[color:var(--wake)]/15 bg-black">
+      <div
+        ref={canvasRef}
+        className="relative overflow-hidden rounded-sm border border-[color:var(--wake)]/15 bg-black"
+      >
         <div className="relative">
           <ImgSlot
             src="/images/transom-preview-base.jpg"
@@ -86,7 +85,9 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
         </div>
         <div className="flex items-center justify-between border-t border-[color:var(--wake)]/15 bg-[color:var(--hull)] px-4 py-2 font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
           <span>PREVIEW · {finish.label.toUpperCase()}</span>
-          <span>{config.size}" HEIGHT · ≈{runLength}" RUN</span>
+          <span>
+            {config.size}" HEIGHT · ≈{runLength}" RUN
+          </span>
         </div>
       </div>
 
@@ -175,7 +176,9 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
                   </span>
                   <span className="font-mono text-[9px] leading-tight tracking-widest text-[color:var(--wake)]">
                     {f.label.split(" ").map((w) => (
-                      <span key={w} className="block">{w.toUpperCase()}</span>
+                      <span key={w} className="block">
+                        {w.toUpperCase()}
+                      </span>
                     ))}
                   </span>
                 </button>
@@ -225,5 +228,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function Hint({ children }: { children: React.ReactNode }) {
-  return <span className="mt-1 block text-right font-mono text-[10px] text-[color:var(--wake)]">{children}</span>;
+  return (
+    <span className="mt-1 block text-right font-mono text-[10px] text-[color:var(--wake)]">
+      {children}
+    </span>
+  );
 }

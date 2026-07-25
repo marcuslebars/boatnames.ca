@@ -71,11 +71,11 @@
 }
 
 :root {
-  --hull: #141A20;
-  --gelcoat: #F2F4F3;
-  --polish: #00FFFF;
-  --bay: #2E5A63;
-  --wake: #8C969B;
+  --hull: #141a20;
+  --gelcoat: #f2f4f3;
+  --polish: #00ffff;
+  --bay: #2e5a63;
+  --wake: #8c969b;
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
@@ -168,12 +168,19 @@
 }
 
 .finish-mirror-gold {
-  background: linear-gradient(180deg, #f6e3a0 0%, #d4b23a 32%, #8a6a10 55%, #f0d886 78%, #b8892a 100%);
+  background: linear-gradient(
+    180deg,
+    #f6e3a0 0%,
+    #d4b23a 32%,
+    #8a6a10 55%,
+    #f0d886 78%,
+    #b8892a 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  filter: drop-shadow(2px 3px 2px rgba(0,0,0,0.55)) drop-shadow(0 1px 0 rgba(255, 235, 170, 0.4));
+  filter: drop-shadow(2px 3px 2px rgba(0, 0, 0, 0.55)) drop-shadow(0 1px 0 rgba(255, 235, 170, 0.4));
 }
 .finish-mirror-silver {
   background: linear-gradient(180deg, #f4f6f8 0%, #b6bec5 40%, #6d7883 60%, #dfe4e8 100%);
@@ -181,28 +188,35 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  filter: drop-shadow(2px 3px 2px rgba(0,0,0,0.55));
+  filter: drop-shadow(2px 3px 2px rgba(0, 0, 0, 0.55));
 }
 .finish-gloss-black {
   color: #0a0d10;
-  text-shadow: 0 1px 0 #2a3038, 0 -1px 0 rgba(255,255,255,0.18);
-  filter: drop-shadow(3px 5px 4px rgba(0,0,0,0.65));
+  text-shadow:
+    0 1px 0 #2a3038,
+    0 -1px 0 rgba(255, 255, 255, 0.18);
+  filter: drop-shadow(3px 5px 4px rgba(0, 0, 0, 0.65));
 }
 .finish-gloss-white {
   color: #f6f7f8;
-  text-shadow: 0 -1px 0 rgba(255,255,255,0.6), 0 2px 0 rgba(0,0,0,0.35);
-  filter: drop-shadow(3px 5px 4px rgba(0,0,0,0.55));
+  text-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.6),
+    0 2px 0 rgba(0, 0, 0, 0.35);
+  filter: drop-shadow(3px 5px 4px rgba(0, 0, 0, 0.55));
 }
 .finish-frosted {
-  color: rgba(242,244,243,0.72);
-  text-shadow: 0 0 1px rgba(255,255,255,0.6);
-  filter: drop-shadow(2px 3px 3px rgba(0,0,0,0.4));
+  color: rgba(242, 244, 243, 0.72);
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.6);
+  filter: drop-shadow(2px 3px 3px rgba(0, 0, 0, 0.4));
 }
-
 
 .placeholder-slot {
   background-color: #1c242b;
-  background-image: repeating-linear-gradient(45deg, rgba(140,150,155,0.08) 0 12px, rgba(140,150,155,0.03) 12px 24px);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(140, 150, 155, 0.08) 0 12px,
+    rgba(140, 150, 155, 0.03) 12px 24px
+  );
   color: var(--wake);
   font-family: var(--font-mono);
   font-size: 11px;
@@ -215,25 +229,56 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .anim-fade, .anim-rise { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .anim-fade,
+  .anim-rise {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 @keyframes rise-in {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.anim-rise { animation: rise-in 0.9s cubic-bezier(.2,.7,.2,1) both; }
-.anim-delay-1 { animation-delay: 0.15s; }
-.anim-delay-2 { animation-delay: 0.35s; }
-.anim-delay-3 { animation-delay: 0.55s; }
-.anim-delay-4 { animation-delay: 0.75s; }
+.anim-rise {
+  animation: rise-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.anim-delay-1 {
+  animation-delay: 0.15s;
+}
+.anim-delay-2 {
+  animation-delay: 0.35s;
+}
+.anim-delay-3 {
+  animation-delay: 0.55s;
+}
+.anim-delay-4 {
+  animation-delay: 0.75s;
+}
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.reveal { opacity: 0; }
-.reveal.in-view { animation: fade-in 0.7s ease-out forwards; }
+.reveal {
+  opacity: 0;
+}
+.reveal.in-view {
+  animation: fade-in 0.7s ease-out forwards;
+}
 
 .dashed-rule {
   background-image: linear-gradient(to right, var(--wake) 50%, transparent 0%);

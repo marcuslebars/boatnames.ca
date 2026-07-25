@@ -26,7 +26,9 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, beforeAlt, afterAlt }: 
       if (!dragging.current) return;
       setFromClientX(e.clientX);
     };
-    const up = () => { dragging.current = false; };
+    const up = () => {
+      dragging.current = false;
+    };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
     return () => {
@@ -58,10 +60,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, beforeAlt, afterAlt }: 
       <div className="absolute inset-0">
         <ImgSlot src={afterSrc} alt={afterAlt} ratio="16/10" className="h-full w-full" />
       </div>
-      <div
-        className="absolute inset-y-0 left-0 overflow-hidden"
-        style={{ width: `${pos}%` }}
-      >
+      <div className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${pos}%` }}>
         <div className="h-full" style={{ width: wrapRef.current?.clientWidth ?? "100%" }}>
           <ImgSlot src={beforeSrc} alt={beforeAlt} ratio="16/10" className="h-full w-full" />
         </div>
@@ -79,8 +78,12 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, beforeAlt, afterAlt }: 
       >
         <span className="font-mono text-[10px] tracking-widest text-[color:var(--polish)]">↔</span>
       </div>
-      <span className="absolute left-3 top-3 font-mono text-[10px] tracking-widest text-[color:var(--wake)]">BEFORE</span>
-      <span className="absolute right-3 top-3 font-mono text-[10px] tracking-widest text-[color:var(--polish)]">AFTER</span>
+      <span className="absolute left-3 top-3 font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
+        BEFORE
+      </span>
+      <span className="absolute right-3 top-3 font-mono text-[10px] tracking-widest text-[color:var(--polish)]">
+        AFTER
+      </span>
     </div>
   );
 }

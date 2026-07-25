@@ -54,7 +54,8 @@ export function QuoteForm({ prefill }: Props) {
           We'll send a proof and a price within one business day.
         </h3>
         <p className="mt-3 max-w-xl text-[color:var(--wake)]">
-          If we need a clearer transom photo or a measurement we'll email first before quoting. No auto-replies, no drip sequence.
+          If we need a clearer transom photo or a measurement we'll email first before quoting. No
+          auto-replies, no drip sequence.
         </p>
         <button
           type="button"
@@ -80,12 +81,16 @@ export function QuoteForm({ prefill }: Props) {
 
       <Select name="font" label="Font" defaultValue={prefill.font}>
         {FONT_OPTIONS.map((f) => (
-          <option key={f.key} value={f.key}>{f.label}</option>
+          <option key={f.key} value={f.key}>
+            {f.label}
+          </option>
         ))}
       </Select>
       <Select name="finish" label="Finish" defaultValue={prefill.finish}>
         {FINISH_OPTIONS.map((f) => (
-          <option key={f.key} value={f.key}>{f.label}</option>
+          <option key={f.key} value={f.key}>
+            {f.label}
+          </option>
         ))}
       </Select>
 
@@ -104,7 +109,12 @@ export function QuoteForm({ prefill }: Props) {
 
       <div className="sm:col-span-2">
         <Label>Notes</Label>
-        <textarea name="notes" rows={4} className={inputCls} placeholder="Anything about the layout, timing, or the boat." />
+        <textarea
+          name="notes"
+          rows={4}
+          className={inputCls}
+          placeholder="Anything about the layout, timing, or the boat."
+        />
       </div>
 
       <div className="sm:col-span-2">
@@ -152,9 +162,7 @@ function Label({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Input(
-  props: React.InputHTMLAttributes<HTMLInputElement> & { label: string }
-) {
+function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   const { label, ...rest } = props;
   return (
     <label className="block">
@@ -164,14 +172,14 @@ function Input(
   );
 }
 
-function Select(
-  props: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string }
-) {
+function Select(props: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string }) {
   const { label, children, ...rest } = props;
   return (
     <label className="block">
       <Label>{label}</Label>
-      <select {...rest} className={inputCls}>{children}</select>
+      <select {...rest} className={inputCls}>
+        {children}
+      </select>
     </label>
   );
 }

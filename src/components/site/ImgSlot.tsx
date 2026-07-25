@@ -16,10 +16,7 @@ type Props = {
 export function ImgSlot({ src, alt, ratio = "4/3", className = "", eager }: Props) {
   const [failed, setFailed] = useState(false);
   return (
-    <div
-      className={`relative overflow-hidden ${className}`}
-      style={{ aspectRatio: ratio }}
-    >
+    <div className={`relative overflow-hidden ${className}`} style={{ aspectRatio: ratio }}>
       {!failed ? (
         <img
           src={src}

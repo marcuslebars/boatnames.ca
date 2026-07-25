@@ -1,0 +1,13 @@
+# Normalize line endings to LF in the repo. Dev happens on Windows but the
+# deploy target (Railway/Linux) and Prettier both expect LF.
+* text=auto eol=lf
+
+# Treat binary assets as binary so Git never touches their bytes.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.heic binary
+*.ico binary
+*.woff binary
+*.woff2 binary

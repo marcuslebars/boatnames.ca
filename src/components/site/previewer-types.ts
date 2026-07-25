@@ -1,5 +1,10 @@
 export type Finish = "mirror-gold" | "mirror-silver" | "gloss-black" | "gloss-white" | "frosted";
-export type FontKey = "transom-serif" | "deck-sans" | "commodore" | "commodore-italic" | "yacht-script";
+export type FontKey =
+  | "transom-serif"
+  | "deck-sans"
+  | "commodore"
+  | "commodore-italic"
+  | "yacht-script";
 
 export type PreviewConfig = {
   name: string;
@@ -13,7 +18,12 @@ export const FONT_OPTIONS: { key: FontKey; label: string; css: string; weight?: 
   { key: "transom-serif", label: "Transom Serif", css: '"Yeseva One", serif', weight: 400 },
   { key: "deck-sans", label: "Deck Sans", css: '"Big Shoulders Display", sans-serif', weight: 800 },
   { key: "commodore", label: "Commodore", css: '"Bebas Neue", sans-serif', weight: 400 },
-  { key: "commodore-italic", label: "Commodore Italic", css: '"Playfair Display", serif', weight: 800 },
+  {
+    key: "commodore-italic",
+    label: "Commodore Italic",
+    css: '"Playfair Display", serif',
+    weight: 800,
+  },
   { key: "yacht-script", label: "Yacht Script", css: '"Alex Brush", cursive', weight: 400 },
 ];
 

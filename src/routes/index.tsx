@@ -4,13 +4,9 @@ import { ImgSlot } from "@/components/site/ImgSlot";
 import { BeforeAfterSlider } from "@/components/site/BeforeAfterSlider";
 import { TransomPreviewer } from "@/components/site/TransomPreviewer";
 import { QuoteForm } from "@/components/site/QuoteForm";
-import {
-  FINISH_OPTIONS,
-  type PreviewConfig,
-} from "@/components/site/previewer-types";
+import { FINISH_OPTIONS, type PreviewConfig } from "@/components/site/previewer-types";
 
-const TITLE =
-  "Custom Acrylic Boat Name Lettering | Georgian Bay | A1 Marine Care";
+const TITLE = "Custom Acrylic Boat Name Lettering | Georgian Bay | A1 Marine Care";
 const DESCRIPTION =
   "Dimensional cast acrylic boat name lettering and marine ceramic detailing in Midland and across Georgian Bay. Featuring Holy Ship, a Meridian 408 Motoryacht.";
 const OG_IMAGE = "/images/transom-hero.jpg";
@@ -48,12 +44,7 @@ export const Route = createFileRoute("/")({
                 addressRegion: "ON",
                 addressCountry: "CA",
               },
-              areaServed: [
-                "Georgian Bay",
-                "Muskoka",
-                "Lake Simcoe",
-                "Trent-Severn Waterway",
-              ],
+              areaServed: ["Georgian Bay", "Muskoka", "Lake Simcoe", "Trent-Severn Waterway"],
               url: "https://holyship.a1marinecare.ca/",
             },
             {
@@ -62,7 +53,7 @@ export const Route = createFileRoute("/")({
               provider: { "@type": "LocalBusiness", name: "A1 Marine Care" },
               areaServed: "Georgian Bay, Ontario",
               description:
-                "Laser-cut cast acrylic boat name lettering, 1/4\" thick, VHB-mounted with template installation. Mirror gold, mirror silver, gloss, and frosted finishes.",
+                'Laser-cut cast acrylic boat name lettering, 1/4" thick, VHB-mounted with template installation. Mirror gold, mirror silver, gloss, and frosted finishes.',
             },
           ],
         }),
@@ -92,7 +83,7 @@ function Index() {
           }
         });
       },
-      { threshold: 0.12 }
+      { threshold: 0.12 },
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
@@ -103,10 +94,9 @@ function Index() {
   useEffect(() => {
     const el = heroRef.current;
     if (!el) return;
-    const io = new IntersectionObserver(
-      ([e]) => setShowStickyCta(!e.isIntersecting),
-      { rootMargin: "-80px 0px 0px 0px" }
-    );
+    const io = new IntersectionObserver(([e]) => setShowStickyCta(!e.isIntersecting), {
+      rootMargin: "-80px 0px 0px 0px",
+    });
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -142,7 +132,8 @@ function Index() {
               Holy <span className="text-mirror-gold">Ship</span>
             </h1>
             <p className="anim-rise anim-delay-3 mt-6 max-w-xl text-lg text-[color:var(--gelcoat)]/85">
-              A Meridian 408 Motoryacht on Georgian Bay. Detailed, ceramic coated, and finished with custom dimensional cast acrylic transom lettering.
+              A Meridian 408 Motoryacht on Georgian Bay. Detailed, ceramic coated, and finished with
+              custom dimensional cast acrylic transom lettering.
             </p>
             <div className="anim-rise anim-delay-4 mt-10 flex flex-wrap gap-3">
               <button
@@ -167,7 +158,10 @@ function Index() {
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_1.2fr]">
           <div>
             <p className="text-[color:var(--gelcoat)]/80">
-              Twin-inboard flybridge motoryacht built for extended weekends on the Bay. The owner keeps her at a private slip north of Midland and runs her regularly to the North Channel. When we took her on she was ten seasons of sun and dock-side spray past her last polish.
+              Twin-inboard flybridge motoryacht built for extended weekends on the Bay. The owner
+              keeps her at a private slip north of Midland and runs her regularly to the North
+              Channel. When we took her on she was ten seasons of sun and dock-side spray past her
+              last polish.
             </p>
             <dl className="dashed-rule mt-10 grid grid-cols-2 gap-y-4 border-b border-transparent pb-6 font-mono text-xs">
               {[
@@ -218,15 +212,44 @@ function Index() {
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_1.1fr]">
           <ol className="space-y-6">
             {[
-              ["01", "Wash and decontamination", "Two-bucket wash, iron and salt decontamination across every panel."],
-              ["02", "Compound and cut", "Machine-cut on oxidized gelcoat to remove the chalked top layer."],
-              ["03", "Polish", "Two-stage polish to bring the reflection back to a wet-look finish."],
-              ["04", "Ceramic coating", "Marine-grade ceramic applied to hull, superstructure, and hard tops."],
-              ["05", "Non-skid and vinyl detail", "Non-skid deep clean and vinyl protectant on rub rails and graphics."],
-              ["06", "Stainless and canvas", "Rails polished and sealed, canvas cleaned and reproofed."],
+              [
+                "01",
+                "Wash and decontamination",
+                "Two-bucket wash, iron and salt decontamination across every panel.",
+              ],
+              [
+                "02",
+                "Compound and cut",
+                "Machine-cut on oxidized gelcoat to remove the chalked top layer.",
+              ],
+              [
+                "03",
+                "Polish",
+                "Two-stage polish to bring the reflection back to a wet-look finish.",
+              ],
+              [
+                "04",
+                "Ceramic coating",
+                "Marine-grade ceramic applied to hull, superstructure, and hard tops.",
+              ],
+              [
+                "05",
+                "Non-skid and vinyl detail",
+                "Non-skid deep clean and vinyl protectant on rub rails and graphics.",
+              ],
+              [
+                "06",
+                "Stainless and canvas",
+                "Rails polished and sealed, canvas cleaned and reproofed.",
+              ],
             ].map(([n, title, desc]) => (
-              <li key={n} className="grid grid-cols-[auto_1fr] gap-6 border-b border-[color:var(--wake)]/15 pb-6 last:border-0">
-                <span className="font-mono text-xs tracking-widest text-[color:var(--polish)]">{n}</span>
+              <li
+                key={n}
+                className="grid grid-cols-[auto_1fr] gap-6 border-b border-[color:var(--wake)]/15 pb-6 last:border-0"
+              >
+                <span className="font-mono text-xs tracking-widest text-[color:var(--polish)]">
+                  {n}
+                </span>
                 <div>
                   <h3 className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase tracking-tight">
                     {title}
@@ -251,13 +274,11 @@ function Index() {
       </Section>
 
       {/* THE NAME */}
-      <Section
-        id="name"
-        eyebrow="THE NAME"
-        title="Acrylic versus vinyl."
-      >
+      <Section id="name" eyebrow="THE NAME" title="Acrylic versus vinyl.">
         <p className="max-w-2xl text-[color:var(--gelcoat)]/80">
-          Laser-cut cast acrylic letters, 1/4" thick, mounted with marine-grade VHB and installed off a printed transfer template so the alignment is exact the first time. The letters sit off the hull, catch the light, and cast a small shadow. Vinyl is printed and flat.
+          Laser-cut cast acrylic letters, 1/4" thick, mounted with marine-grade VHB and installed
+          off a printed transfer template so the alignment is exact the first time. The letters sit
+          off the hull, catch the light, and cast a small shadow. Vinyl is printed and flat.
         </p>
 
         <div className="mt-12 overflow-x-auto">
@@ -265,20 +286,30 @@ function Index() {
             <thead>
               <tr className="border-b border-[color:var(--wake)]/25">
                 <th className="py-4 text-left font-mono text-[10px] tracking-widest text-[color:var(--wake)]"></th>
-                <th className="py-4 text-left font-mono text-[10px] tracking-widest text-[color:var(--wake)]">CUT VINYL</th>
-                <th className="py-4 text-left font-mono text-[10px] tracking-widest text-[color:var(--polish)]">CAST ACRYLIC</th>
+                <th className="py-4 text-left font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
+                  CUT VINYL
+                </th>
+                <th className="py-4 text-left font-mono text-[10px] tracking-widest text-[color:var(--polish)]">
+                  CAST ACRYLIC
+                </th>
               </tr>
             </thead>
             <tbody>
               {[
                 ["Look", "Flat, printed", "Dimensional, casts a shadow"],
                 ["Lifespan", "3–5 years, fades and lifts at edges", "10+ years, colour-stable"],
-                ["Finish options", "Solid colours, printed metallics", "True mirror gold, mirror silver, gloss, frosted"],
+                [
+                  "Finish options",
+                  "Solid colours, printed metallics",
+                  "True mirror gold, mirror silver, gloss, frosted",
+                ],
                 ["Repair", "Full replacement", "Individual letters replaceable"],
                 ["Removal", "Adhesive residue, often needs heat", "Clean release"],
               ].map(([row, a, b]) => (
                 <tr key={row} className="border-b border-[color:var(--wake)]/10 align-top">
-                  <td className="py-4 pr-6 font-mono text-[10px] tracking-widest text-[color:var(--wake)]">{row.toUpperCase()}</td>
+                  <td className="py-4 pr-6 font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
+                    {row.toUpperCase()}
+                  </td>
                   <td className="py-4 pr-6 text-[color:var(--gelcoat)]/70">{a}</td>
                   <td className="py-4 text-[color:var(--gelcoat)]">{b}</td>
                 </tr>
@@ -288,7 +319,9 @@ function Index() {
         </div>
 
         <div className="mt-16">
-          <h3 className="font-mono text-[10px] tracking-widest text-[color:var(--wake)]">FINISH LIBRARY</h3>
+          <h3 className="font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
+            FINISH LIBRARY
+          </h3>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {FINISH_OPTIONS.map((f) => (
               <figure key={f.key} className="group">
@@ -308,7 +341,10 @@ function Index() {
       </Section>
 
       {/* PREVIEWER */}
-      <section id="previewer" className="relative border-y border-[color:var(--wake)]/15 bg-[color:var(--hull)]">
+      <section
+        id="previewer"
+        className="relative border-y border-[color:var(--wake)]/15 bg-[color:var(--hull)]"
+      >
         <div className="mx-auto max-w-7xl px-6 py-24 lg:px-10 lg:py-32">
           <div className="reveal">
             <p className="font-mono text-[11px] tracking-[0.28em] text-[color:var(--polish)]">
@@ -318,7 +354,8 @@ function Index() {
               Type your name. See it on a transom.
             </h2>
             <p className="mt-4 max-w-xl text-[color:var(--gelcoat)]/75">
-              A live preview, not a mock-up. What you configure here carries directly into the quote form below.
+              A live preview, not a mock-up. What you configure here carries directly into the quote
+              form below.
             </p>
           </div>
           <div className="reveal mt-12">
@@ -335,13 +372,31 @@ function Index() {
       <Section id="how" eyebrow="HOW IT WORKS" title="Four steps." tone="bay">
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            ["01", "Measure your transom", "Width in inches at the panel where the name will sit. A photo counts."],
-            ["02", "Pick font and finish", "Use the previewer above or send us a reference. Five finishes, five faces."],
-            ["03", "We template and proof", "You approve a full-size printed template and a proof before we cut."],
-            ["04", "Mobile install", "We install at your marina across Georgian Bay, Simcoe, and the Trent-Severn."],
+            [
+              "01",
+              "Measure your transom",
+              "Width in inches at the panel where the name will sit. A photo counts.",
+            ],
+            [
+              "02",
+              "Pick font and finish",
+              "Use the previewer above or send us a reference. Five finishes, five faces.",
+            ],
+            [
+              "03",
+              "We template and proof",
+              "You approve a full-size printed template and a proof before we cut.",
+            ],
+            [
+              "04",
+              "Mobile install",
+              "We install at your marina across Georgian Bay, Simcoe, and the Trent-Severn.",
+            ],
           ].map(([n, t, d]) => (
             <div key={n} className="border-t border-[color:var(--polish)]/40 pt-5">
-              <span className="font-mono text-xs tracking-widest text-[color:var(--polish)]">{n}</span>
+              <span className="font-mono text-xs tracking-widest text-[color:var(--polish)]">
+                {n}
+              </span>
               <h3 className="mt-3 font-[family-name:var(--font-display)] text-2xl font-bold uppercase tracking-tight">
                 {t}
               </h3>
@@ -365,7 +420,8 @@ function Index() {
               Send us your transom.
             </h2>
             <p className="mt-4 max-w-xl text-[color:var(--gelcoat)]/75">
-              We reply within one business day with a proof and a price. If you configured a design above, it's already filled in.
+              We reply within one business day with a proof and a price. If you configured a design
+              above, it's already filled in.
             </p>
           </div>
           <div className="reveal mt-12">
@@ -400,10 +456,18 @@ function Header({ showCta, onQuote }: { showCta: boolean; onQuote: () => void })
           </span>
         </a>
         <nav className="hidden items-center gap-6 font-mono text-[11px] tracking-widest text-[color:var(--wake)] md:flex">
-          <a href="#boat" className="hover:text-[color:var(--gelcoat)]">THE BOAT</a>
-          <a href="#condition" className="hover:text-[color:var(--gelcoat)]">THE WORK</a>
-          <a href="#name" className="hover:text-[color:var(--gelcoat)]">THE NAME</a>
-          <a href="#previewer" className="hover:text-[color:var(--gelcoat)]">PREVIEWER</a>
+          <a href="#boat" className="hover:text-[color:var(--gelcoat)]">
+            THE BOAT
+          </a>
+          <a href="#condition" className="hover:text-[color:var(--gelcoat)]">
+            THE WORK
+          </a>
+          <a href="#name" className="hover:text-[color:var(--gelcoat)]">
+            THE NAME
+          </a>
+          <a href="#previewer" className="hover:text-[color:var(--gelcoat)]">
+            PREVIEWER
+          </a>
         </nav>
         <button
           onClick={onQuote}
@@ -440,7 +504,9 @@ function Section({
     >
       <div className="mx-auto max-w-7xl px-6 py-24 lg:px-10 lg:py-32">
         <div className="reveal">
-          <p className="font-mono text-[11px] tracking-[0.28em] text-[color:var(--polish)]">{eyebrow}</p>
+          <p className="font-mono text-[11px] tracking-[0.28em] text-[color:var(--polish)]">
+            {eyebrow}
+          </p>
           <h2 className="mt-4 max-w-3xl font-[family-name:var(--font-display)] text-5xl font-bold uppercase leading-[0.95] tracking-tight sm:text-6xl">
             {title}
           </h2>
@@ -463,25 +529,46 @@ function Footer() {
             </span>
           </div>
           <p className="mt-4 max-w-md text-sm text-[color:var(--gelcoat)]/70">
-            Marine detailing, ceramic coating, and custom cast acrylic lettering. Based in Midland, Ontario. Mobile service across Georgian Bay, Muskoka, Lake Simcoe, and the Trent-Severn.
+            Marine detailing, ceramic coating, and custom cast acrylic lettering. Based in Midland,
+            Ontario. Mobile service across Georgian Bay, Muskoka, Lake Simcoe, and the Trent-Severn.
           </p>
           <p className="mt-6 max-w-md text-xs text-[color:var(--wake)]">
             This page documents one customer boat, shared with the owner's permission.
           </p>
         </div>
         <div>
-          <h4 className="font-mono text-[10px] tracking-widest text-[color:var(--wake)]">CONTACT</h4>
+          <h4 className="font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
+            CONTACT
+          </h4>
           <ul className="mt-3 space-y-2 text-sm">
-            <li><a href="tel:+17050000000" className="hover:text-[color:var(--polish)]">(705) 000-0000</a></li>
-            <li><a href="mailto:hello@a1marinecare.ca" className="hover:text-[color:var(--polish)]">hello@a1marinecare.ca</a></li>
+            <li>
+              <a href="tel:+17050000000" className="hover:text-[color:var(--polish)]">
+                (705) 000-0000
+              </a>
+            </li>
+            <li>
+              <a href="mailto:hello@a1marinecare.ca" className="hover:text-[color:var(--polish)]">
+                hello@a1marinecare.ca
+              </a>
+            </li>
             <li className="text-[color:var(--wake)]">Midland, Ontario</li>
           </ul>
         </div>
         <div>
-          <h4 className="font-mono text-[10px] tracking-widest text-[color:var(--wake)]">ELSEWHERE</h4>
+          <h4 className="font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
+            ELSEWHERE
+          </h4>
           <ul className="mt-3 space-y-2 text-sm">
-            <li><a href="https://a1marinecare.ca" className="hover:text-[color:var(--polish)]">a1marinecare.ca</a></li>
-            <li><a href="https://a1marinestorage.ca" className="hover:text-[color:var(--polish)]">a1marinestorage.ca</a></li>
+            <li>
+              <a href="https://a1marinecare.ca" className="hover:text-[color:var(--polish)]">
+                a1marinecare.ca
+              </a>
+            </li>
+            <li>
+              <a href="https://a1marinestorage.ca" className="hover:text-[color:var(--polish)]">
+                a1marinestorage.ca
+              </a>
+            </li>
           </ul>
         </div>
       </div>
