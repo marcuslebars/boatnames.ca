@@ -1,0 +1,15 @@
+# Keep the build context small and never ship secrets or build artifacts.
+node_modules
+.output
+.nitro
+.wrangler
+.vinxi
+.tanstack
+dist
+.git
+.github
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
