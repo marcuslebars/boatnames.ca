@@ -16,7 +16,7 @@ const TITLE = "Custom Acrylic Boat Name Lettering | Georgian Bay | A1 Marine Car
 const DESCRIPTION =
   "Dimensional cast acrylic boat name lettering and marine ceramic detailing in Midland and across Georgian Bay. Featuring Holy Ship, a Meridian 408 Motoryacht.";
 // Absolute URLs — social scrapers and canonical tags need the full origin.
-const OG_IMAGE = `${SITE_URL}/images/transom-hero.jpg`;
+const OG_IMAGE = `${SITE_URL}/images/holyship-profile.jpg`;
 const CANONICAL = `${SITE_URL}/`;
 
 export const Route = createFileRoute("/")({
@@ -145,8 +145,8 @@ function Index() {
       <section ref={heroRef} className="relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10">
           <ImgSlot
-            src="/images/transom-hero.jpg"
-            alt="Close-up of Holy Ship's dark transom with dimensional mirror-gold cast acrylic lettering"
+            src="/images/holyship-flybridge.jpg"
+            alt="Holy Ship, a white Meridian 408 flybridge motoryacht, at her slip under a clear sky"
             ratio="21/9"
             eager
             className="h-full w-full"
@@ -164,7 +164,7 @@ function Index() {
               className="anim-rise anim-delay-2 mt-6 text-6xl leading-[0.9] tracking-tight text-[color:var(--gelcoat)] sm:text-8xl md:text-9xl"
               style={{ fontFamily: heroFont.css, fontWeight: heroFont.weight }}
             >
-              Holy <span className="finish-mirror-gold">Ship</span>
+              Holy <span className="finish-mirror-cyan">Ship</span>
             </h1>
             <p className="anim-rise anim-delay-3 mt-6 max-w-xl text-lg text-[color:var(--gelcoat)]/85">
               A Meridian 408 Motoryacht on Georgian Bay. Detailed, ceramic coated, and finished with
@@ -227,11 +227,6 @@ function Index() {
               className="col-span-2 sm:col-span-1"
             />
             <div className="flex flex-col gap-3">
-              <ImgSlot
-                src="/images/holyship-flybridge.jpg"
-                alt="Holy Ship's white flybridge and hardtop with its canvas enclosure and polished stainless rails"
-                ratio="4/3"
-              />
               <ImgSlot
                 src="/images/holyship-hull-side.jpg"
                 alt="Detailed white hull side of Holy Ship with the Meridian badge and polished stainless rub rail"

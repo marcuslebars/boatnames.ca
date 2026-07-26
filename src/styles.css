@@ -66,7 +66,7 @@
 :root {
   --hull: #141a20;
   --gelcoat: #f2f4f3;
-  --polish: #00ffff;
+  --polish: #22d3ee;
   --bay: #2e5a63;
   --wake: #8c969b;
   --radius: 0.625rem;
@@ -191,6 +191,25 @@
   color: rgba(242, 244, 243, 0.72);
   text-shadow: 0 0 1px rgba(255, 255, 255, 0.6);
   filter: drop-shadow(2px 3px 3px rgba(0, 0, 0, 0.4));
+}
+
+/* Luxury metallic-cyan accent for the hero name — a mirror/chrome cyan, the
+   brand accent's premium counterpart (replaces the mirror-gold hero accent).
+   Not a product finish; the acrylic Mirror Gold option is unchanged. */
+.finish-mirror-cyan {
+  background: linear-gradient(
+    180deg,
+    #e0feff 0%,
+    #6ee7f2 30%,
+    #0e8fa0 55%,
+    #b6f5fb 78%,
+    #26c6d6 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(2px 3px 2px rgba(0, 0, 0, 0.55)) drop-shadow(0 1px 0 rgba(190, 245, 250, 0.4));
 }
 
 .placeholder-slot {
