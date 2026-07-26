@@ -43,7 +43,9 @@ Each renders a labelled placeholder tile until the real file exists. Paths + alt
 | `finish-gloss-white.jpg`   | Sample of Gloss White cast acrylic finish under marina light              |
 | `finish-frosted.jpg`       | Sample of Frosted cast acrylic finish under marina light                  |
 
-Already present: `transom-hero.jpg`, `transom-preview-base.jpg`, `favicon.png`.
+**Added from the owner's photos:** `holyship-profile.jpg` (transom/name), `holyship-flybridge.jpg`, `holyship-hull-side.jpg`, `holyship-408-badge.jpg` — so the first three rows above are done.
+
+**Still needed:** `hull-before.jpg`, `hull-after.jpg`, and the five `finish-*.jpg` swatches (or restructure those sections to not require them). Already present: `transom-hero.jpg`, `transom-preview-base.jpg`, `favicon.png`.
 
 ## 4. Supabase (the leads backend)
 
