@@ -4,23 +4,23 @@ import { ImgSlot } from "@/components/site/ImgSlot";
 import { BeforeAfterSlider } from "@/components/site/BeforeAfterSlider";
 import { TransomPreviewer } from "@/components/site/TransomPreviewer";
 import { QuoteForm } from "@/components/site/QuoteForm";
-import {
-  FINISH_OPTIONS,
-  FONT_OPTIONS,
-  type PreviewConfig,
-} from "@/components/site/previewer-types";
-import { configToSearchParams, parseConfig } from "@/components/site/previewer-url";
+import { FINISH_OPTIONS, type PreviewConfig } from "@/components/site/previewer-types";
+import { parseConfig } from "@/components/site/previewer-url";
 import { SITE_URL } from "@/lib/site";
 
 const TITLE = "Custom Acrylic Boat Name Lettering | Georgian Bay | A1 Marine Care";
 const DESCRIPTION =
-  "Dimensional cast acrylic boat name lettering and marine ceramic detailing in Midland and across Georgian Bay. Featuring Holy Ship, a Meridian 408 Motoryacht.";
+  "Dimensional cast acrylic boat name lettering and premium marine detailing in Midland and across Georgian Bay. Featuring Holy Ship, a Meridian 408 Motoryacht.";
 // Absolute URLs — social scrapers and canonical tags need the full origin.
-const OG_IMAGE = `${SITE_URL}/images/holyship-profile.jpg`;
+const OG_IMAGE = `${SITE_URL}/images/holyship-hero.jpg`;
 const CANONICAL = `${SITE_URL}/`;
 
 export const Route = createFileRoute("/")({
   component: Index,
+  // Pass query params through untouched (shareable design keys + utm_* campaign
+  // tags) so the previewer's navigate() can update the design in the URL without
+  // stripping anything the quote form later reads.
+  validateSearch: (search: Record<string, unknown>): Record<string, unknown> => search,
   head: () => ({
     meta: [
       { title: TITLE },
@@ -79,10 +79,7 @@ function Index() {
     finish: "mirror-gold",
     size: 8,
   });
-
-  // The hero renders the boat name in the currently-selected acrylic face, so
-  // it doubles as a live sample of the previewer's font choice.
-  const heroFont = FONT_OPTIONS.find((f) => f.key === config.font) ?? FONT_OPTIONS[0];
+  const navigate = Route.useNavigate();
 
   // Read a shared/bookmarked design from the URL on mount.
   useEffect(() => {
@@ -90,18 +87,28 @@ function Index() {
   }, []);
 
   // Mirror config to the URL (debounced) so a design is shareable and the quote
-  // email can link back to the exact preview.
+  // email can link back to the exact preview. Use the router's navigate with
+  // resetScroll:false — a raw history.replaceState is intercepted by TanStack
+  // Router's patched history and triggers scroll restoration, jerking the page
+  // back to the top mid-edit. The function form of `search` merges onto prev so
+  // campaign params (utm_*) survive; keys set to undefined drop out of the URL.
   useEffect(() => {
     const id = setTimeout(() => {
-      const qs = configToSearchParams(config).toString();
-      window.history.replaceState(
-        null,
-        "",
-        `${window.location.pathname}?${qs}${window.location.hash}`,
-      );
+      void navigate({
+        search: (prev: Record<string, unknown>) => ({
+          ...prev,
+          name: config.name.trim() || undefined,
+          port: config.port.trim() || undefined,
+          font: config.font,
+          finish: config.finish,
+          size: String(config.size),
+        }),
+        replace: true,
+        resetScroll: false,
+      });
     }, 400);
     return () => clearTimeout(id);
-  }, [config]);
+  }, [config, navigate]);
 
   // Reveal-on-scroll for sections
   useEffect(() => {
@@ -145,8 +152,8 @@ function Index() {
       <section ref={heroRef} className="relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10">
           <ImgSlot
-            src="/images/holyship-flybridge.jpg"
-            alt="Holy Ship, a white Meridian 408 flybridge motoryacht, at her slip under a clear sky"
+            src="/images/holyship-hero.jpg"
+            alt="HOLY SHIP! in mirror-chrome dimensional cast acrylic on a Meridian 408 transom, reflecting a Georgian Bay sunset"
             ratio="21/9"
             eager
             className="h-full w-full"
@@ -160,15 +167,20 @@ function Index() {
             <p className="anim-rise anim-delay-1 font-mono text-[11px] tracking-[0.28em] text-[color:var(--polish)]">
               A1 MARINE CARE · REFERENCE JOB Nº 01
             </p>
-            <h1
-              className="anim-rise anim-delay-2 mt-6 text-6xl leading-[0.9] tracking-tight text-[color:var(--gelcoat)] sm:text-8xl md:text-9xl"
-              style={{ fontFamily: heroFont.css, fontWeight: heroFont.weight }}
-            >
-              Holy <span className="finish-mirror-cyan">Ship</span>
+            {/* The hero photo already shows the finished chrome-acrylic name, so
+                a big visible wordmark would double it — keep the H1 for SEO and
+                screen readers only, and lead visually with the value line. */}
+            <h1 className="sr-only">
+              Holy Ship — custom dimensional cast acrylic boat name lettering by A1 Marine Care
             </h1>
+            <p className="anim-rise anim-delay-2 mt-6 max-w-xl font-sans text-4xl font-bold leading-[1.05] tracking-tight text-[color:var(--gelcoat)] sm:text-5xl">
+              Detailed to a mirror.
+              <br />
+              Named in <span className="finish-mirror-cyan">cast acrylic</span>.
+            </p>
             <p className="anim-rise anim-delay-3 mt-6 max-w-xl text-lg text-[color:var(--gelcoat)]/85">
-              A Meridian 408 Motoryacht on Georgian Bay. Detailed, ceramic coated, and finished with
-              custom dimensional cast acrylic transom lettering.
+              A Meridian 408 motoryacht on Georgian Bay — wet-sanded, compounded, polished, and
+              polymer-sealed, then finished with custom dimensional cast acrylic transom lettering.
             </p>
             <div className="anim-rise anim-delay-4 mt-10 flex flex-wrap gap-3">
               <button
@@ -221,23 +233,21 @@ function Index() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <ImgSlot
-              src="/images/holyship-profile.jpg"
-              alt="Transom of Holy Ship, a white Meridian 408, with its name and anchor motif"
-              ratio="4/5"
-              className="col-span-2 sm:col-span-1"
+              src="/images/holyship-gallery1.jpg"
+              alt="Transom of Holy Ship with HOLY SHIP! in dimensional mirror-chrome cast acrylic over a glossy white hull"
+              ratio="21/9"
+              className="col-span-2"
             />
-            <div className="flex flex-col gap-3">
-              <ImgSlot
-                src="/images/holyship-hull-side.jpg"
-                alt="Detailed white hull side of Holy Ship with the Meridian badge and polished stainless rub rail"
-                ratio="4/3"
-              />
-              <ImgSlot
-                src="/images/holyship-408-badge.jpg"
-                alt="Meridian 408 model badge on Holy Ship's freshly detailed hull"
-                ratio="4/3"
-              />
-            </div>
+            <ImgSlot
+              src="/images/holyship-hull-side.jpg"
+              alt="Detailed white hull side of Holy Ship with the Meridian badge and polished stainless rub rail"
+              ratio="4/3"
+            />
+            <ImgSlot
+              src="/images/holyship-408-badge.jpg"
+              alt="Meridian 408 model badge on Holy Ship's freshly detailed hull"
+              ratio="4/3"
+            />
           </div>
         </div>
       </Section>
@@ -259,23 +269,23 @@ function Index() {
               ],
               [
                 "02",
+                "Wet sand",
+                "Wet-sanded by hand to level oxidation and the old vinyl adhesive lines before cutting.",
+              ],
+              [
+                "03",
                 "Compound and cut",
                 "Machine-cut on oxidized gelcoat to remove the chalked top layer.",
               ],
               [
-                "03",
+                "04",
                 "Polish",
                 "Two-stage polish to bring the reflection back to a wet-look finish.",
               ],
               [
-                "04",
-                "Ceramic coating",
-                "Marine-grade ceramic applied to hull, superstructure, and hard tops.",
-              ],
-              [
                 "05",
-                "Non-skid and vinyl detail",
-                "Non-skid deep clean and vinyl protectant on rub rails and graphics.",
+                "Polymer sealant",
+                "Marine polymer sealant hand-applied to the hull and superstructure for a durable, UV-resistant gloss.",
               ],
               [
                 "06",
@@ -299,13 +309,13 @@ function Index() {
           </ol>
           <div>
             <BeforeAfterSlider
-              beforeSrc="/images/hull-before.jpg"
-              afterSrc="/images/hull-after.jpg"
-              beforeAlt="Hull side of Holy Ship before compound and polish, showing oxidation"
-              afterAlt="Hull side of Holy Ship after ceramic coating, reflecting the sky"
+              beforeSrc="/images/holyship-before.jpg"
+              afterSrc="/images/holyship-gallery1.jpg"
+              beforeAlt="Holy Ship's transom before — the old flat navy vinyl name on weathered gelcoat"
+              afterAlt="Holy Ship's transom after — polished glossy with HOLY SHIP! in dimensional mirror-chrome cast acrylic"
             />
             <p className="mt-4 font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
-              DRAG THE HANDLE · STARBOARD HULL, MIDSHIPS
+              DRAG THE HANDLE · FLAT VINYL → CAST ACRYLIC
             </p>
           </div>
         </div>
@@ -565,8 +575,9 @@ function Footer() {
             </span>
           </div>
           <p className="mt-4 max-w-md text-sm text-[color:var(--gelcoat)]/70">
-            Marine detailing, ceramic coating, and custom cast acrylic lettering. Based in Midland,
-            Ontario. Mobile service across Georgian Bay, Muskoka, Lake Simcoe, and the Trent-Severn.
+            Marine detailing, polishing and polymer sealing, and custom cast acrylic lettering.
+            Based in Midland, Ontario. Mobile service across Georgian Bay, Muskoka, Lake Simcoe, and
+            the Trent-Severn.
           </p>
           <p className="mt-6 max-w-md text-xs text-[color:var(--wake)]">
             This page documents one customer boat, shared with the owner's permission.

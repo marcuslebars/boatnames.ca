@@ -12,7 +12,9 @@ go live.
 - "…**runs her regularly to the North Channel**."
 - "…**ten seasons** of sun and dock-side spray past her last polish."
 - Footer: "This page documents one customer boat, **shared with the owner's permission**." — confirm you have that permission.
-- The six-step "WHAT A1 DID" process — confirm it matches the actual job done on this hull.
+- The six-step "WHAT A1 DID" process now reads wash → wet sand → compound → polish → polymer
+  sealant → stainless/canvas (the owner confirmed the real job was wet-sand / compound / polish
+  then polymer seal — **not** ceramic coating).
 
 **Spec values — Meridian 408 model-line approximations, verify against the real hull:**
 
@@ -26,26 +28,29 @@ Currently placeholders (flagged with `TODO(NAP)` in `src/routes/index.tsx`):
 - Email `hello@a1marinecare.ca` — confirm this is the right inbox.
 - Address — only `Midland, ON` locality is set; add a street address if you want it in the schema.
 
-## 3. Missing photography (10 files) — drop into `public/images/`
+## 3. Photography — only the five `finish-*.jpg` swatches are still missing
 
 Each renders a labelled placeholder tile until the real file exists. Paths + alt text:
 
-| File (`public/images/…`)   | Alt text                                                                  |
-| -------------------------- | ------------------------------------------------------------------------- |
-| `holyship-profile.jpg`     | Meridian 408 Holy Ship at anchor, profile view                            |
-| `holyship-flybridge.jpg`   | Flybridge of Holy Ship with polished stainless and detailed canvas        |
-| `holyship-hull-side.jpg`   | Ceramic-coated hull side of Holy Ship showing depth of gelcoat reflection |
-| `hull-before.jpg`          | Hull side of Holy Ship before compound and polish, showing oxidation      |
-| `hull-after.jpg`           | Hull side of Holy Ship after ceramic coating, reflecting the sky          |
-| `finish-mirror-gold.jpg`   | Sample of Mirror Gold cast acrylic finish under marina light              |
-| `finish-mirror-silver.jpg` | Sample of Mirror Silver cast acrylic finish under marina light            |
-| `finish-gloss-black.jpg`   | Sample of Gloss Black cast acrylic finish under marina light              |
-| `finish-gloss-white.jpg`   | Sample of Gloss White cast acrylic finish under marina light              |
-| `finish-frosted.jpg`       | Sample of Frosted cast acrylic finish under marina light                  |
+| File (`public/images/…`)   | Alt text                                                            |
+| -------------------------- | ------------------------------------------------------------------- |
+| `holyship-profile.jpg`     | Meridian 408 Holy Ship at anchor, profile view                      |
+| `holyship-flybridge.jpg`   | Flybridge of Holy Ship with polished stainless and detailed canvas  |
+| `holyship-hull-side.jpg`   | Detailed hull side of Holy Ship showing depth of gelcoat reflection |
+| `finish-mirror-gold.jpg`   | Sample of Mirror Gold cast acrylic finish under marina light        |
+| `finish-mirror-silver.jpg` | Sample of Mirror Silver cast acrylic finish under marina light      |
+| `finish-gloss-black.jpg`   | Sample of Gloss Black cast acrylic finish under marina light        |
+| `finish-gloss-white.jpg`   | Sample of Gloss White cast acrylic finish under marina light        |
+| `finish-frosted.jpg`       | Sample of Frosted cast acrylic finish under marina light            |
 
-**Added from the owner's photos:** `holyship-profile.jpg` (transom/name), `holyship-flybridge.jpg`, `holyship-hull-side.jpg`, `holyship-408-badge.jpg` — so the first three rows above are done.
+**Added from the owner's photos:** `holyship-hero.jpg` (hero — chrome name at sunset),
+`holyship-gallery1.jpg` (gallery feature + slider "after"), `holyship-before.jpg` (slider "before" —
+the old navy flat-vinyl name), `holyship-hull-side.jpg`, `holyship-408-badge.jpg`. The before/after
+slider now runs on real photos (flat vinyl → cast acrylic). `holyship-profile.jpg` and
+`holyship-flybridge.jpg` are present but no longer referenced by the page.
 
-**Still needed:** `hull-before.jpg`, `hull-after.jpg`, and the five `finish-*.jpg` swatches (or restructure those sections to not require them). Already present: `transom-hero.jpg`, `transom-preview-base.jpg`, `favicon.png`.
+**Still needed:** the five `finish-*.jpg` swatches (or restructure that section to not require them).
+Already present: `transom-hero.jpg`, `transom-preview-base.jpg`, `favicon.png`.
 
 ## 4. Supabase (the leads backend)
 

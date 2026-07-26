@@ -14,7 +14,7 @@ import { reportError } from "../lib/report-error";
 import { SITE_URL } from "../lib/site";
 const SITE_TITLE = "Custom Acrylic Boat Name Lettering | Georgian Bay | A1 Marine Care";
 const SITE_DESCRIPTION =
-  "Dimensional cast acrylic boat name lettering and marine ceramic detailing in Midland and across Georgian Bay. Featuring Holy Ship, a Meridian 408 Motoryacht.";
+  "Dimensional cast acrylic boat name lettering and premium marine detailing in Midland and across Georgian Bay. Featuring Holy Ship, a Meridian 408 Motoryacht.";
 const OG_IMAGE = `${SITE_URL}/images/transom-hero.jpg`;
 
 function NotFoundComponent() {
