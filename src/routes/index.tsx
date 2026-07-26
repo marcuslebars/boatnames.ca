@@ -210,7 +210,7 @@ function Index() {
                 ["TYPE", "FLYBRIDGE MOTORYACHT"],
                 ["POWER", "TWIN INBOARD"],
                 ["HOME WATERS", "GEORGIAN BAY, ON"],
-                ["HULL COLOUR", "MIDNIGHT / GRAPHITE"],
+                ["HULL COLOUR", "GELCOAT WHITE"],
               ].map(([k, v]) => (
                 <div key={k} className="flex flex-col gap-1">
                   <dt className="tracking-widest text-[color:var(--wake)]">{k}</dt>
@@ -222,19 +222,24 @@ function Index() {
           <div className="grid grid-cols-2 gap-3">
             <ImgSlot
               src="/images/holyship-profile.jpg"
-              alt="Meridian 408 Holy Ship at anchor, profile view"
+              alt="Transom of Holy Ship, a white Meridian 408, with its name and anchor motif"
               ratio="4/5"
               className="col-span-2 sm:col-span-1"
             />
             <div className="flex flex-col gap-3">
               <ImgSlot
                 src="/images/holyship-flybridge.jpg"
-                alt="Flybridge of Holy Ship with polished stainless and detailed canvas"
+                alt="Holy Ship's white flybridge and hardtop with its canvas enclosure and polished stainless rails"
                 ratio="4/3"
               />
               <ImgSlot
                 src="/images/holyship-hull-side.jpg"
-                alt="Ceramic-coated hull side of Holy Ship showing depth of gelcoat reflection"
+                alt="Detailed white hull side of Holy Ship with the Meridian badge and polished stainless rub rail"
+                ratio="4/3"
+              />
+              <ImgSlot
+                src="/images/holyship-408-badge.jpg"
+                alt="Meridian 408 model badge on Holy Ship's freshly detailed hull"
                 ratio="4/3"
               />
             </div>
