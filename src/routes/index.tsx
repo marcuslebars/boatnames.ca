@@ -5,7 +5,12 @@ import { TransomPreviewer } from "@/components/site/TransomPreviewer";
 import { QuoteForm } from "@/components/site/QuoteForm";
 import { SiteHeader, SiteFooter, Section } from "@/components/site/Layout";
 import { useRevealOnScroll } from "@/components/site/use-reveal";
-import { FINISH_OPTIONS, type PreviewConfig } from "@/components/site/previewer-types";
+import {
+  ACRYLIC_FINISHES,
+  defaultFinishFor,
+  type PreviewConfig,
+  type ProductLine,
+} from "@/components/site/previewer-types";
 import { parseConfig } from "@/components/site/previewer-url";
 import { SITE_URL } from "@/lib/site";
 
@@ -75,6 +80,7 @@ function Index() {
   const [config, setConfig] = useState<PreviewConfig>({
     name: EXAMPLE_NAMES[0],
     port: "",
+    line: "acrylic",
     font: "transom-serif",
     finish: "mirror-gold",
     size: 8,
@@ -115,6 +121,7 @@ function Index() {
           ...prev,
           name: config.name.trim() || undefined,
           port: config.port.trim() || undefined,
+          line: config.line,
           font: config.font,
           finish: config.finish,
           size: String(config.size),
@@ -142,6 +149,12 @@ function Index() {
 
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // Jump into the previewer with a product line preselected (from the ladder CTAs).
+  function designWith(line: ProductLine) {
+    setConfig((c) => ({ ...c, line, finish: defaultFinishFor(line) }));
+    scrollTo("previewer");
   }
 
   return (
@@ -219,7 +232,7 @@ function Index() {
             {/* Phase 3 preselects the vinyl product line from this CTA. */}
             <button
               type="button"
-              onClick={() => scrollTo("previewer")}
+              onClick={() => designWith("vinyl")}
               className="mt-8 inline-flex items-center justify-center gap-2 self-start rounded-sm border border-[color:var(--gelcoat)]/25 px-4 py-2.5 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--gelcoat)] transition hover:border-[color:var(--gelcoat)]/60"
             >
               DESIGN IN VINYL →
@@ -247,7 +260,7 @@ function Index() {
             <div className="mt-8 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => scrollTo("previewer")}
+                onClick={() => designWith("acrylic")}
                 className="inline-flex items-center justify-center gap-2 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-4 py-2.5 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90"
               >
                 DESIGN IN ACRYLIC →
@@ -313,7 +326,7 @@ function Index() {
             CAST ACRYLIC FINISHES
           </h3>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {FINISH_OPTIONS.map((f) => (
+            {ACRYLIC_FINISHES.map((f) => (
               <figure key={f.key} className="group">
                 <ImgSlot
                   src={`/images/finish-${f.key}.jpg`}

@@ -1,13 +1,14 @@
 import {
-  FINISH_OPTIONS,
   FONT_OPTIONS,
+  defaultFinishFor,
+  finishBelongsTo,
   type Finish,
   type FontKey,
   type PreviewConfig,
+  type ProductLine,
 } from "./previewer-types";
 
 const FONT_KEYS = FONT_OPTIONS.map((f) => f.key) as string[];
-const FINISH_KEYS = FINISH_OPTIONS.map((f) => f.key) as string[];
 
 export const SIZE_MIN = 3;
 export const SIZE_MAX = 14;
@@ -22,6 +23,7 @@ export function configToSearchParams(config: PreviewConfig): URLSearchParams {
   const p = new URLSearchParams();
   if (config.name.trim()) p.set("name", config.name.trim());
   if (config.port.trim()) p.set("port", config.port.trim());
+  p.set("line", config.line);
   p.set("font", config.font);
   p.set("finish", config.finish);
   p.set("size", String(config.size));
@@ -39,11 +41,19 @@ export function parseConfig(search: string, base: PreviewConfig): PreviewConfig 
   const port = p.get("port");
   if (port != null) next.port = port.slice(0, 24);
 
+  // Product line first — it decides which finish set is valid. Links without a
+  // line (older shares) keep the base, which defaults to acrylic.
+  const line = p.get("line");
+  if (line === "vinyl" || line === "acrylic") next.line = line as ProductLine;
+
   const font = p.get("font");
   if (font && FONT_KEYS.includes(font)) next.font = font as FontKey;
 
   const finish = p.get("finish");
-  if (finish && FINISH_KEYS.includes(finish)) next.finish = finish as Finish;
+  if (finish && finishBelongsTo(finish, next.line)) next.finish = finish as Finish;
+  // Guarantee the finish is valid for the resolved line (fixes a base/line
+  // mismatch or a hand-edited URL that pairs, say, line=vinyl with mirror-gold).
+  if (!finishBelongsTo(next.finish, next.line)) next.finish = defaultFinishFor(next.line);
 
   const size = p.get("size");
   if (size != null) next.size = clampSize(parseFloat(size));

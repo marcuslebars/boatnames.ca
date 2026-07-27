@@ -193,6 +193,36 @@
   filter: drop-shadow(2px 3px 3px rgba(0, 0, 0, 0.4));
 }
 
+/* Cut-vinyl finishes: FLAT rendering — solid colour or printed metallic, and
+   deliberately NO standoff drop-shadow. The missing acrylic bevel is exactly
+   the visible difference between the entry and premium tiers in the previewer. */
+.vinyl-white {
+  color: #f4f6f5;
+}
+.vinyl-black {
+  color: #14181c;
+}
+.vinyl-navy {
+  color: #1f2c47;
+}
+.vinyl-red {
+  color: #b22028;
+}
+.vinyl-gold {
+  background: linear-gradient(180deg, #e7c766 0%, #c99a2e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.vinyl-silver {
+  background: linear-gradient(180deg, #d9dee2 0%, #9aa4ab 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
 /* Luxury metallic-cyan accent for the hero name — a mirror/chrome cyan, the
    brand accent's premium counterpart (replaces the mirror-gold hero accent).
    Not a product finish; the acrylic Mirror Gold option is unchanged. */

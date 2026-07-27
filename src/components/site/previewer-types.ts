@@ -1,4 +1,23 @@
-export type Finish = "mirror-gold" | "mirror-silver" | "gloss-black" | "gloss-white" | "frosted";
+export type ProductLine = "vinyl" | "acrylic";
+
+// Cast acrylic finishes — dimensional, rendered with a standoff drop-shadow.
+export type AcrylicFinish =
+  | "mirror-gold"
+  | "mirror-silver"
+  | "gloss-black"
+  | "gloss-white"
+  | "frosted";
+// Cut vinyl finishes — flat solids + printed metallics, rendered with NO
+// standoff shadow. The missing bevel vs. acrylic is the visible upsell.
+export type VinylFinish =
+  | "vinyl-white"
+  | "vinyl-black"
+  | "vinyl-navy"
+  | "vinyl-red"
+  | "vinyl-gold"
+  | "vinyl-silver";
+export type Finish = AcrylicFinish | VinylFinish;
+
 export type FontKey =
   | "transom-serif"
   | "deck-sans"
@@ -9,6 +28,7 @@ export type FontKey =
 export type PreviewConfig = {
   name: string;
   port: string;
+  line: ProductLine;
   font: FontKey;
   finish: Finish;
   size: number; // letter height in inches
@@ -27,10 +47,38 @@ export const FONT_OPTIONS: { key: FontKey; label: string; css: string; weight?: 
   { key: "yacht-script", label: "Yacht Script", css: '"Alex Brush", cursive', weight: 400 },
 ];
 
-export const FINISH_OPTIONS: { key: Finish; label: string; textClass: string }[] = [
+export type FinishOption = { key: Finish; label: string; textClass: string };
+
+export const ACRYLIC_FINISHES: FinishOption[] = [
   { key: "mirror-gold", label: "Mirror Gold", textClass: "finish-mirror-gold" },
   { key: "mirror-silver", label: "Mirror Silver", textClass: "finish-mirror-silver" },
   { key: "gloss-black", label: "Gloss Black", textClass: "finish-gloss-black" },
   { key: "gloss-white", label: "Gloss White", textClass: "finish-gloss-white" },
   { key: "frosted", label: "Frosted", textClass: "finish-frosted" },
 ];
+
+export const VINYL_FINISHES: FinishOption[] = [
+  { key: "vinyl-white", label: "White", textClass: "vinyl-white" },
+  { key: "vinyl-black", label: "Black", textClass: "vinyl-black" },
+  { key: "vinyl-navy", label: "Navy", textClass: "vinyl-navy" },
+  { key: "vinyl-red", label: "Red", textClass: "vinyl-red" },
+  { key: "vinyl-gold", label: "Metallic Gold", textClass: "vinyl-gold" },
+  { key: "vinyl-silver", label: "Metallic Silver", textClass: "vinyl-silver" },
+];
+
+export const ALL_FINISHES: FinishOption[] = [...ACRYLIC_FINISHES, ...VINYL_FINISHES];
+
+/** The finish set offered for a product line. */
+export function finishOptionsFor(line: ProductLine): FinishOption[] {
+  return line === "vinyl" ? VINYL_FINISHES : ACRYLIC_FINISHES;
+}
+
+/** Default finish when a line is (re)selected. */
+export function defaultFinishFor(line: ProductLine): Finish {
+  return line === "vinyl" ? "vinyl-white" : "mirror-gold";
+}
+
+/** True when `finish` is valid for `line` (used to sanitize URL/state). */
+export function finishBelongsTo(finish: string, line: ProductLine): boolean {
+  return finishOptionsFor(line).some((f) => f.key === finish);
+}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { estimateRunLengthIn } from "./previewer-measure";
-import { FINISH_OPTIONS, FONT_OPTIONS, type PreviewConfig } from "./previewer-types";
+import { ALL_FINISHES, FONT_OPTIONS, type PreviewConfig } from "./previewer-types";
 import { previewShareUrl } from "./previewer-url";
 import { CONSENT_TEXT, HONEYPOT_FIELD, quoteSchema, TIMING_FIELD } from "./quote-schema";
 
@@ -204,7 +204,7 @@ export function QuoteForm({ prefill }: Props) {
         ))}
       </Select>
       <Select name="finish" label="Finish" defaultValue={prefill.finish} error={fieldErrors.finish}>
-        {FINISH_OPTIONS.map((f) => (
+        {ALL_FINISHES.map((f) => (
           <option key={f.key} value={f.key}>
             {f.label}
           </option>

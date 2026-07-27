@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { type Finish, FINISH_OPTIONS, type FontKey, FONT_OPTIONS } from "./previewer-types";
+import { type Finish, ALL_FINISHES, type FontKey, FONT_OPTIONS } from "./previewer-types";
 
 const fontKeys = FONT_OPTIONS.map((f) => f.key) as [FontKey, ...FontKey[]];
-const finishKeys = FINISH_OPTIONS.map((f) => f.key) as [Finish, ...Finish[]];
+const finishKeys = ALL_FINISHES.map((f) => f.key) as [Finish, ...Finish[]];
 
 // FormData yields strings; treat "" as "not provided".
 const optionalText = (max: number) =>

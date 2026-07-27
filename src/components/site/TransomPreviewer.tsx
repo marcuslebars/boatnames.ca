@@ -2,11 +2,13 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ImgSlot } from "./ImgSlot";
 import { FALLBACK_RATIO, measureRatios, type Ratio } from "./previewer-measure";
 import {
-  FINISH_OPTIONS,
   FONT_OPTIONS,
+  defaultFinishFor,
+  finishOptionsFor,
   type Finish,
   type FontKey,
   type PreviewConfig,
+  type ProductLine,
 } from "./previewer-types";
 
 type Props = {
@@ -32,7 +34,6 @@ const PANEL = {
 };
 
 const FONT_KEYS = FONT_OPTIONS.map((f) => f.key);
-const FINISH_KEYS = FINISH_OPTIONS.map((f) => f.key);
 
 function finishFill(
   ctx: CanvasRenderingContext2D,
@@ -40,15 +41,27 @@ function finishFill(
   centerY: number,
   height: number,
 ): string | CanvasGradient {
+  // Solid fills — acrylic gloss/frosted, plus the flat vinyl colours.
   if (key === "gloss-black") return "#0a0d10";
   if (key === "gloss-white") return "#f6f7f8";
   if (key === "frosted") return "rgba(242,244,243,0.72)";
+  if (key === "vinyl-white") return "#f4f6f5";
+  if (key === "vinyl-black") return "#14181c";
+  if (key === "vinyl-navy") return "#1f2c47";
+  if (key === "vinyl-red") return "#b22028";
   const g = ctx.createLinearGradient(0, centerY - height / 2, 0, centerY + height / 2);
   if (key === "mirror-silver") {
     g.addColorStop(0, "#f4f6f8");
     g.addColorStop(0.4, "#b6bec5");
     g.addColorStop(0.6, "#6d7883");
     g.addColorStop(1, "#dfe4e8");
+  } else if (key === "vinyl-gold") {
+    // Printed metallic — a plain two-stop gradient, no acrylic depth.
+    g.addColorStop(0, "#e7c766");
+    g.addColorStop(1, "#c99a2e");
+  } else if (key === "vinyl-silver") {
+    g.addColorStop(0, "#d9dee2");
+    g.addColorStop(1, "#9aa4ab");
   } else {
     // mirror-gold
     g.addColorStop(0, "#f6e3a0");
@@ -85,7 +98,10 @@ function radioKeydown<T extends string>(
 
 export function TransomPreviewer({ config, onChange, onQuote }: Props) {
   const font = FONT_OPTIONS.find((f) => f.key === config.font) ?? FONT_OPTIONS[0];
-  const finish = FINISH_OPTIONS.find((f) => f.key === config.finish) ?? FINISH_OPTIONS[0];
+  const finishes = finishOptionsFor(config.line);
+  const finish = finishes.find((f) => f.key === config.finish) ?? finishes[0];
+  const finishKeys = finishes.map((f) => f.key);
+  const isAcrylic = config.line === "acrylic";
   const uppercase = font.key !== "yacht-script";
 
   const displayName = config.name.trim() || "YOUR BOAT";
@@ -172,10 +188,13 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
 
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.shadowColor = "rgba(0,0,0,0.55)";
-      ctx.shadowBlur = Math.max(capPx * 0.05, 2);
-      ctx.shadowOffsetX = capPx * 0.03;
-      ctx.shadowOffsetY = capPx * 0.05;
+      // Acrylic is dimensional (standoff shadow); vinyl is flat (no shadow).
+      if (isAcrylic) {
+        ctx.shadowColor = "rgba(0,0,0,0.55)";
+        ctx.shadowBlur = Math.max(capPx * 0.05, 2);
+        ctx.shadowOffsetX = capPx * 0.03;
+        ctx.shadowOffsetY = capPx * 0.05;
+      }
 
       const hasPort = config.port.trim().length > 0;
       const portPx = Math.max(capPx * 0.32, 8);
@@ -191,6 +210,47 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
         ctx.fillStyle = finishFill(ctx, finish.key, portCy, portPx);
         ctx.fillText(config.port.trim().toUpperCase(), cx, portCy);
       }
+
+      // Branded spec strip along the bottom — boatnames.ca + the design summary
+      // (line, font, finish, size, computed run). No price is shown: pricing
+      // comes back with the quote and would route through @a1/pricing-engine if a
+      // model is added — run length is the input it would price on.
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      const stripH = Math.max(H * 0.075, 42);
+      ctx.fillStyle = "rgba(10,13,16,0.85)";
+      ctx.fillRect(0, H - stripH, W, stripH);
+      const midY = H - stripH / 2;
+      const brandFont = Math.max(stripH * 0.32, 12);
+      ctx.textBaseline = "middle";
+      ctx.textAlign = "left";
+      ctx.font = `600 ${brandFont}px "JetBrains Mono", ui-monospace, monospace`;
+      ctx.fillStyle = "#22d3ee";
+      ctx.fillText("boatnames.ca", W * 0.03, midY);
+      const brandW = ctx.measureText("boatnames.ca").width;
+
+      const spec = [
+        displayName,
+        font.label,
+        finish.label,
+        `${config.size}"`,
+        runLengthIn > 0 ? `~${Math.round(runLengthIn)}" run` : "",
+        isAcrylic ? "CAST ACRYLIC" : "CUT VINYL",
+      ]
+        .filter(Boolean)
+        .join("  ·  ");
+      let specFont = brandFont;
+      const maxSpecW = W * 0.94 - brandW;
+      ctx.font = `400 ${specFont}px "JetBrains Mono", ui-monospace, monospace`;
+      while (specFont > 9 && ctx.measureText(spec).width > maxSpecW) {
+        specFont -= 1;
+        ctx.font = `400 ${specFont}px "JetBrains Mono", ui-monospace, monospace`;
+      }
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#e6e9ea";
+      ctx.fillText(spec, W * 0.97, midY);
 
       const slug =
         config.name
@@ -314,6 +374,38 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
 
       {/* Controls */}
       <div className="flex flex-col gap-6">
+        {/* Product line — the entry/premium toggle. Switching resets the finish
+            to that line's default so the two finish sets never cross. */}
+        <div>
+          <span className="mb-2 block font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
+            PRODUCT LINE
+          </span>
+          <div role="radiogroup" aria-label="Product line" className="grid grid-cols-2 gap-2">
+            {(["vinyl", "acrylic"] as ProductLine[]).map((ln) => {
+              const active = config.line === ln;
+              return (
+                <button
+                  key={ln}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => onChange({ ...config, line: ln, finish: defaultFinishFor(ln) })}
+                  className={`rounded-sm border px-3 py-2.5 font-sans text-[11px] font-semibold uppercase tracking-[0.2em] transition ${
+                    active
+                      ? "border-[color:var(--polish)] bg-[color:var(--polish)]/10 text-[color:var(--gelcoat)]"
+                      : "border-[color:var(--wake)]/20 text-[color:var(--wake)] hover:border-[color:var(--wake)]/40"
+                  }`}
+                >
+                  {ln === "vinyl" ? "Cut Vinyl" : "Cast Acrylic"}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
+            {isAcrylic ? "DIMENSIONAL · 10+ YR · CASTS A SHADOW" : "FLAT · 3–5 YR · PRINTED"}
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Boat name">
             <input
@@ -376,8 +468,8 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
           })}
         </RadioField>
 
-        <RadioField label="Finish" className="grid grid-cols-5 gap-2">
-          {FINISH_OPTIONS.map((f) => {
+        <RadioField label="Finish" className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          {finishes.map((f) => {
             const active = f.key === config.finish;
             return (
               <button
@@ -389,7 +481,7 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
                 tabIndex={active ? 0 : -1}
                 onClick={() => onChange({ ...config, finish: f.key })}
                 onKeyDown={(e) =>
-                  radioKeydown(e, FINISH_KEYS, config.finish, (k: Finish) =>
+                  radioKeydown(e, finishKeys, config.finish, (k: Finish) =>
                     onChange({ ...config, finish: k }),
                   )
                 }

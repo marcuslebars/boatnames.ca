@@ -1,4 +1,4 @@
-import { FINISH_OPTIONS, FONT_OPTIONS } from "@/components/site/previewer-types";
+import { ALL_FINISHES, FONT_OPTIONS } from "@/components/site/previewer-types";
 import {
   HONEYPOT_FIELD,
   MIN_FILL_MS,
@@ -140,7 +140,7 @@ export async function handleQuoteSubmission(sub: QuoteSubmission): Promise<Quote
   }
 
   const fontLabel = FONT_OPTIONS.find((f) => f.key === v.font)?.label;
-  const finishLabel = FINISH_OPTIONS.find((f) => f.key === v.finish)?.label;
+  const finishLabel = ALL_FINISHES.find((f) => f.key === v.finish)?.label;
   const runLengthIn = numberOrNull(fields.run_length);
   const previewUrl = fields.preview_url || undefined;
   const utm = collectUtm(fields);
