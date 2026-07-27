@@ -23,6 +23,17 @@ const MOVED_ANCHORS: Record<string, string> = {
   "#condition": "/gallery/holy-ship",
 };
 
+// Invented example names (no real customer boats) so the previewer never loads
+// empty; a fresh one is seeded on each clean (no-design) visit.
+const EXAMPLE_NAMES = [
+  "Second Wind",
+  "Knot Working",
+  "Reel Therapy",
+  "Serenity",
+  "Fair Winds",
+  "Blue Horizon",
+];
+
 export const Route = createFileRoute("/")({
   component: Index,
   // Pass query params through untouched (shareable design keys + utm_* campaign
@@ -62,8 +73,8 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [config, setConfig] = useState<PreviewConfig>({
-    name: "Holy Ship",
-    port: "Midland, ON",
+    name: EXAMPLE_NAMES[0],
+    port: "",
     font: "transom-serif",
     finish: "mirror-gold",
     size: 8,
@@ -78,7 +89,17 @@ function Index() {
       void navigate({ to: dest, replace: true });
       return;
     }
-    setConfig((c) => parseConfig(window.location.search, c));
+    const params = new URLSearchParams(window.location.search);
+    const hasSharedDesign = ["name", "font", "finish", "size"].some((k) => params.has(k));
+    if (hasSharedDesign) {
+      setConfig((c) => parseConfig(window.location.search, c));
+    } else {
+      // No shared design in the URL — seed a fresh invented example name.
+      setConfig((c) => ({
+        ...c,
+        name: EXAMPLE_NAMES[Math.floor(Math.random() * EXAMPLE_NAMES.length)],
+      }));
+    }
   }, [navigate]);
 
   // Mirror config to the URL (debounced) so a design is shareable and the quote
@@ -113,7 +134,7 @@ function Index() {
     const el = heroRef.current;
     if (!el) return;
     const io = new IntersectionObserver(([e]) => setShowStickyCta(!e.isIntersecting), {
-      rootMargin: "-80px 0px 0px 0px",
+      rootMargin: "-120px 0px 0px 0px",
     });
     io.observe(el);
     return () => io.disconnect();
@@ -127,66 +148,128 @@ function Index() {
     <div className="min-h-screen bg-[color:var(--hull)] text-[color:var(--gelcoat)]">
       <SiteHeader />
 
-      {/* HERO — Phase 2 replaces this with the previewer itself as the hero. */}
-      <section ref={heroRef} className="relative isolate overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <ImgSlot
-            src="/images/holyship-hero.jpg"
-            alt="A boat name in mirror-chrome dimensional cast acrylic on a transom, reflecting a Georgian Bay sunset"
-            ratio="21/9"
-            eager
-            className="h-full w-full"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[color:var(--hull)] via-[color:var(--hull)]/60 to-[color:var(--hull)]/30" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[color:var(--hull)]/85 via-transparent to-transparent" />
-        </div>
+      {/* HERO = THE PREVIEWER. The product is the first thing you touch. */}
+      <section id="previewer" ref={heroRef} className="border-b border-[color:var(--wake)]/10">
+        <div className="mx-auto max-w-7xl px-6 pb-16 pt-28 sm:pt-32 lg:px-10">
+          <p className="font-mono text-[11px] tracking-[0.28em] text-[color:var(--polish)]">
+            CUSTOM BOAT NAME LETTERING · VINYL &amp; ACRYLIC · SHIPPED CANADA-WIDE
+          </p>
+          <h1 className="mt-4 max-w-3xl font-sans text-4xl font-bold leading-[1.02] tracking-tight sm:text-5xl">
+            Design your boat's name.{" "}
+            <span className="text-[color:var(--gelcoat)]/55">
+              See it on the transom before you buy.
+            </span>
+          </h1>
 
-        <div className="mx-auto flex min-h-[92vh] max-w-7xl flex-col justify-end px-6 pb-16 pt-40 sm:pb-24 lg:px-10">
-          <div className="max-w-3xl">
-            <p className="anim-rise anim-delay-1 font-mono text-[11px] tracking-[0.28em] text-[color:var(--polish)]">
-              CUSTOM BOAT NAME LETTERING · SHIPPED CANADA-WIDE
-            </p>
-            <h1 className="sr-only">
-              Custom boat name lettering — cut vinyl and dimensional cast acrylic, shipped across
-              Canada. boatnames.ca, an A1 company.
-            </h1>
-            <p className="anim-rise anim-delay-2 mt-6 max-w-xl font-sans text-4xl font-bold leading-[1.05] tracking-tight text-[color:var(--gelcoat)] sm:text-5xl">
-              Design your boat's name.
-              <br />
-              See it in <span className="finish-mirror-cyan">cast acrylic</span>.
-            </p>
-            <p className="anim-rise anim-delay-3 mt-6 max-w-xl text-lg text-[color:var(--gelcoat)]/85">
-              Cut vinyl or dimensional cast acrylic, designed online and shipped across Canada with
-              an application guide — or installed for you across Georgian Bay, Lake Simcoe, and the
-              Trent-Severn.
-            </p>
-            <div className="anim-rise anim-delay-4 mt-10 flex flex-wrap gap-3">
-              <button
-                onClick={() => scrollTo("previewer")}
-                className="inline-flex items-center gap-3 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-5 py-3 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90"
-              >
-                DESIGN YOUR NAME →
-              </button>
-              <Link
-                to="/gallery/holy-ship"
-                className="inline-flex items-center gap-3 rounded-sm border border-[color:var(--gelcoat)]/25 px-5 py-3 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--gelcoat)] transition hover:border-[color:var(--gelcoat)]/60"
-              >
-                SEE A REAL JOB
-              </Link>
-            </div>
+          <div className="mt-10">
+            <TransomPreviewer
+              config={config}
+              onChange={setConfig}
+              onQuote={() => scrollTo("quote")}
+            />
           </div>
+
+          {/* Trust strip */}
+          <dl className="mt-12 grid grid-cols-1 gap-px overflow-hidden rounded-sm border border-[color:var(--wake)]/15 bg-[color:var(--wake)]/15 sm:grid-cols-3">
+            {[
+              [
+                "Canada-wide shipping",
+                "Cut, proofed, and shipped with a step-by-step application guide.",
+              ],
+              [
+                "10+ year cast acrylic",
+                "Dimensional letters — colour-stable, with a clean release.",
+              ],
+              [
+                "Installed locally by A1",
+                "White-glove mobile install on Georgian Bay, Simcoe & the Trent-Severn.",
+              ],
+            ].map(([t, d]) => (
+              <div key={t} className="bg-[color:var(--hull)] p-5">
+                <dt className="font-sans text-sm font-bold uppercase tracking-tight text-[color:var(--gelcoat)]">
+                  {t}
+                </dt>
+                <dd className="mt-1 text-sm text-[color:var(--gelcoat)]/70">{d}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 
-      {/* THE NAME — Phase 2 reworks this into the two-tier product ladder. */}
-      <Section id="name" eyebrow="THE NAME" title="Acrylic versus vinyl.">
-        <p className="max-w-2xl text-[color:var(--gelcoat)]/80">
-          Laser-cut cast acrylic letters, 1/4" thick, mounted with marine-grade VHB and installed
-          off a printed transfer template so the alignment is exact the first time. The letters sit
-          off the hull, catch the light, and cast a small shadow. Vinyl is printed and flat.
-        </p>
+      {/* PRODUCT LADDER — vinyl (entry) vs acrylic (premium) */}
+      <Section id="products" eyebrow="TWO PRODUCT LINES" title="Which is right for your boat?">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {/* Vinyl — entry */}
+          <div className="flex flex-col rounded-sm border border-[color:var(--wake)]/20 p-8">
+            <p className="font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
+              ENTRY TIER
+            </p>
+            <h3 className="mt-3 font-sans text-3xl font-bold uppercase tracking-tight">
+              Cut Vinyl
+            </h3>
+            <p className="mt-3 text-[color:var(--gelcoat)]/75">
+              Solid colours and printed metallics, cut to your name. The value way to letter a boat
+              — clean, quick, and shippable anywhere.
+            </p>
+            <ul className="mt-6 space-y-2 font-mono text-[11px] tracking-widest text-[color:var(--wake)]">
+              <li>3–5 YEAR LIFESPAN</li>
+              <li>FLAT, PRINTED LOOK</li>
+              <li>SOLID &amp; METALLIC-PRINT COLOURS</li>
+            </ul>
+            {/* Phase 3 preselects the vinyl product line from this CTA. */}
+            <button
+              type="button"
+              onClick={() => scrollTo("previewer")}
+              className="mt-8 inline-flex items-center justify-center gap-2 self-start rounded-sm border border-[color:var(--gelcoat)]/25 px-4 py-2.5 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--gelcoat)] transition hover:border-[color:var(--gelcoat)]/60"
+            >
+              DESIGN IN VINYL →
+            </button>
+          </div>
 
-        <div className="mt-12 overflow-x-auto">
+          {/* Acrylic — premium */}
+          <div className="flex flex-col rounded-sm border border-[color:var(--polish)]/50 bg-[color:var(--polish)]/[0.04] p-8">
+            <p className="font-mono text-[10px] tracking-widest text-[color:var(--polish)]">
+              PREMIUM TIER
+            </p>
+            <h3 className="mt-3 font-sans text-3xl font-bold uppercase tracking-tight">
+              Cast Acrylic
+            </h3>
+            <p className="mt-3 text-[color:var(--gelcoat)]/80">
+              Dimensional laser-cut letters, 1/4" thick, that stand off the hull and catch the
+              light. Mirror, gloss, and frosted finishes that last.
+            </p>
+            <ul className="mt-6 space-y-2 font-mono text-[11px] tracking-widest text-[color:var(--wake)]">
+              <li>10+ YEAR, COLOUR-STABLE</li>
+              <li>DIMENSIONAL — CASTS A SHADOW</li>
+              <li>MIRROR GOLD/SILVER, GLOSS, FROSTED</li>
+              <li>LETTERS INDIVIDUALLY REPLACEABLE</li>
+            </ul>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => scrollTo("previewer")}
+                className="inline-flex items-center justify-center gap-2 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-4 py-2.5 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90"
+              >
+                DESIGN IN ACRYLIC →
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollTo("acrylic-finishes")}
+                className="inline-flex items-center justify-center gap-2 rounded-sm border border-[color:var(--gelcoat)]/25 px-4 py-2.5 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--gelcoat)] transition hover:border-[color:var(--gelcoat)]/60"
+              >
+                SEE FINISHES ↓
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Comparison — reframed as a ladder, not a takedown */}
+        <p className="mt-12 max-w-2xl text-[color:var(--gelcoat)]/80">
+          Both letter your boat, and both start in the previewer above. Cast acrylic is the premium
+          upgrade; vinyl is the value tier. Here's how they compare so you can pick what's right for
+          your boat.
+        </p>
+        <div className="mt-8 overflow-x-auto">
           <table className="w-full min-w-[560px] border-collapse font-sans text-sm">
             <thead>
               <tr className="border-b border-[color:var(--wake)]/25">
@@ -202,7 +285,7 @@ function Index() {
             <tbody>
               {[
                 ["Look", "Flat, printed", "Dimensional, casts a shadow"],
-                ["Lifespan", "3–5 years, fades and lifts at edges", "10+ years, colour-stable"],
+                ["Lifespan", "3–5 years", "10+ years, colour-stable"],
                 [
                   "Finish options",
                   "Solid colours, printed metallics",
@@ -210,6 +293,7 @@ function Index() {
                 ],
                 ["Repair", "Full replacement", "Individual letters replaceable"],
                 ["Removal", "Adhesive residue, often needs heat", "Clean release"],
+                ["Best for", "Value, quick refresh", "A premium, permanent statement"],
               ].map(([row, a, b]) => (
                 <tr key={row} className="border-b border-[color:var(--wake)]/10 align-top">
                   <td className="py-4 pr-6 font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
@@ -223,9 +307,10 @@ function Index() {
           </table>
         </div>
 
-        <div className="mt-16">
+        {/* Acrylic finish library. Phase 3 adds the vinyl colour set + gallery. */}
+        <div id="acrylic-finishes" className="mt-16 scroll-mt-24">
           <h3 className="font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
-            FINISH LIBRARY
+            CAST ACRYLIC FINISHES
           </h3>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {FINISH_OPTIONS.map((f) => (
@@ -245,36 +330,46 @@ function Index() {
         </div>
       </Section>
 
-      {/* PREVIEWER — Phase 2 promotes this to the hero. */}
-      <section
-        id="previewer"
-        className="relative border-y border-[color:var(--wake)]/15 bg-[color:var(--hull)]"
-      >
-        <div className="mx-auto max-w-7xl px-6 py-24 lg:px-10 lg:py-32">
-          <div className="reveal">
-            <p className="font-mono text-[11px] tracking-[0.28em] text-[color:var(--polish)]">
-              THE PREVIEWER
+      {/* FULFILLMENT — ship anywhere vs white-glove install */}
+      <Section id="fulfillment" eyebrow="SHIP OR INSTALL" title="Two ways to get it." tone="bay">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="flex flex-col rounded-sm border border-[color:var(--wake)]/20 bg-[color:var(--hull)] p-8">
+            <h3 className="font-sans text-2xl font-bold uppercase tracking-tight">
+              Ship anywhere in Canada
+            </h3>
+            <p className="mt-3 text-[color:var(--gelcoat)]/75">
+              We template from your photos, cut your lettering, and ship it with a step-by-step
+              application guide. You apply it yourself — templated to your transom so it goes on
+              straight the first time.
             </p>
-            <h2 className="mt-4 max-w-3xl font-sans text-5xl font-bold uppercase leading-[0.95] tracking-tight sm:text-6xl">
-              Type your name. See it on a transom.
-            </h2>
-            <p className="mt-4 max-w-xl text-[color:var(--gelcoat)]/75">
-              A live preview, not a mock-up. What you configure here carries directly into the quote
-              form below.
-            </p>
+            <button
+              type="button"
+              onClick={() => scrollTo("previewer")}
+              className="mt-8 inline-flex items-center gap-2 self-start rounded-sm border border-[color:var(--gelcoat)]/25 px-4 py-2.5 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--gelcoat)] transition hover:border-[color:var(--gelcoat)]/60"
+            >
+              DESIGN A SHIP-ANYWHERE ORDER →
+            </button>
           </div>
-          <div className="reveal mt-12">
-            <TransomPreviewer
-              config={config}
-              onChange={setConfig}
-              onQuote={() => scrollTo("quote")}
-            />
+          <div className="flex flex-col rounded-sm border border-[color:var(--polish)]/50 bg-[color:var(--hull)] p-8">
+            <h3 className="font-sans text-2xl font-bold uppercase tracking-tight">
+              White-glove install
+            </h3>
+            <p className="mt-3 text-[color:var(--gelcoat)]/80">
+              A1 Marine Care crews template, cut, and install at your marina — aligned, finished, no
+              guesswork. Georgian Bay, Lake Simcoe, and the Trent-Severn.
+            </p>
+            <Link
+              to="/install"
+              className="mt-8 inline-flex items-center gap-2 self-start rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-4 py-2.5 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90"
+            >
+              SEE THE INSTALL TIER →
+            </Link>
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* HOW IT WORKS */}
-      <Section id="how" eyebrow="HOW IT WORKS" title="Four steps." tone="bay">
+      <Section id="how" eyebrow="HOW IT WORKS" title="Four steps.">
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {[
             [
@@ -285,7 +380,7 @@ function Index() {
             [
               "02",
               "Design in the previewer",
-              "Type the name, pick a font, finish, and size. Five finishes, five faces.",
+              "Type the name, pick a product line, font, finish, and size. See it before you buy.",
             ],
             [
               "03",
@@ -310,6 +405,36 @@ function Index() {
         <p className="mt-10 max-w-2xl font-mono text-xs tracking-widest text-[color:var(--wake)]">
           WE TEMPLATE FROM YOUR PHOTOS AND CONFIRM DIMENSIONS BEFORE CUTTING.
         </p>
+      </Section>
+
+      {/* PROOF — case study teaser */}
+      <Section id="proof" eyebrow="PROOF" title="A real transom." tone="bay">
+        <Link
+          to="/gallery/holy-ship"
+          className="group grid grid-cols-1 overflow-hidden rounded-sm border border-[color:var(--wake)]/20 bg-[color:var(--hull)] transition hover:border-[color:var(--polish)]/60 lg:grid-cols-[1.4fr_1fr]"
+        >
+          <ImgSlot
+            src="/images/holyship-gallery1.jpg"
+            alt="Holy Ship's transom with the name in dimensional mirror-chrome cast acrylic over a glossy white hull"
+            ratio="21/9"
+            className="h-full w-full"
+          />
+          <div className="flex flex-col justify-center p-8">
+            <p className="font-mono text-[10px] tracking-widest text-[color:var(--polish)]">
+              CASE STUDY · MERIDIAN 408
+            </p>
+            <h3 className="mt-3 font-sans text-3xl font-bold uppercase tracking-tight">
+              Holy Ship
+            </h3>
+            <p className="mt-3 text-[color:var(--gelcoat)]/75">
+              From flat navy vinyl to dimensional mirror-chrome cast acrylic — detailed and
+              re-lettered on Georgian Bay.
+            </p>
+            <span className="mt-6 inline-flex items-center gap-2 font-mono text-[11px] font-semibold tracking-[0.2em] text-[color:var(--polish)] group-hover:underline">
+              SEE THE CASE STUDY →
+            </span>
+          </div>
+        </Link>
       </Section>
 
       {/* QUOTE */}
