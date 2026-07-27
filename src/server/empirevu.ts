@@ -1,19 +1,21 @@
 /**
- * Holy Ship → EmpireVu lead forward (4th spoke, after Care, Storage, Coatings).
+ * boatnames.ca → EmpireVu lead forward.
  *
- * Mirrors the sibling spokes (a1marinecare/src/lib/empirevu.ts,
- * a1marinestorage/server/empirevu.ts). Holy Ship is a Care PROPERTY, so
- * sourceSite stays "a1marinecare"; the `source` tag is distinct so holyship
- * traffic is attributable separately. The envelope shape is the shared contract
- * (syncoree/docs/LEAD_SCHEMA.md, leadEnvelopeSchema). The golden fixtures pin
- * this builder's output.
+ * boatnames.ca is a NEW EmpireVu company (slug `a1-boatnames`) under the
+ * `a1-group` org — NOT a service line of a1-marine-care. The intake resolves the
+ * company from `sourceSite` at lead time, so sourceSite is "boatnames" and the
+ * a1-boatnames company MUST be seeded in the EmpireVu repo before the gate flips
+ * (a lead arriving first lands in raw_leads instead of matching a contact). The
+ * `source` tag splits by intent (boatnames_quote_ship / _install / _unsure) for
+ * attribution. The envelope shape is the shared contract (leadEnvelopeSchema);
+ * the golden fixtures pin this builder's output.
  *
- * The canonical envelope has no structured slot for the acrylic specifics and no
- * consent field, and the intake STRIPS unknown keys — so per decision (see
- * CLAUDE.md / commit): the acrylic specs + preview/photo URLs are folded into the
- * free-text `message` (as Care & Storage fold their quote details), and the CASL
- * consent record is kept only in Holy Ship's own quote_requests, never invented
- * into the envelope.
+ * The canonical envelope has no structured slot for the design/tier specifics and
+ * no consent field, and the intake STRIPS unknown keys — so the product line +
+ * fulfillment + design specs + preview/photo URLs are folded into the free-text
+ * `message` (as the siblings fold their quote details), and the CASL consent
+ * record stays only in boatnames' own quote_requests, never invented into the
+ * envelope.
  *
  * signEmpireVuBody + forwardToEmpireVu are copied VERBATIM from the Care spoke —
  * do not rewrite the signing or transport.
@@ -45,13 +47,16 @@ export interface LeadEnvelope {
   };
 }
 
-/** Attributable Holy Ship source tag (distinct from the main Care site). */
-export const HOLYSHIP_SOURCE = "holyship_acrylic_quote";
-/** Brand id — Holy Ship is a Care property, so it routes to the Care company. */
-export const HOLYSHIP_SOURCE_SITE = "a1marinecare";
+/** Brand id the intake maps to the a1-boatnames company (must be seeded first). */
+export const BOATNAMES_SOURCE_SITE = "boatnames";
+/** Attributable source tag, split by fulfillment intent for reporting. */
+export function boatnamesSource(fulfillment: string | undefined): string {
+  const tier = fulfillment === "install" || fulfillment === "ship" ? fulfillment : "unsure";
+  return `boatnames_quote_${tier}`;
+}
 
-/** The acrylic-quote lead, already validated + label-resolved by the API route. */
-export interface HolyShipLead {
+/** The quote lead, already validated + label-resolved by the API route. */
+export interface BoatnamesLead {
   name: string;
   email: string;
   phone?: string;
@@ -85,12 +90,19 @@ function joinText(...parts: Array<string | undefined>): string | undefined {
   return text || undefined;
 }
 
+const FULFILLMENT_LABEL: Record<string, string> = {
+  ship: "Ship anywhere in Canada",
+  install: "White-glove install (Georgian Bay / Simcoe / Trent-Severn)",
+  unsure: "Not sure yet",
+};
+
 /**
- * Fold the acrylic design + links into the one free-text field the contract
- * preserves. The intake stores `message` on the contact + activity + notification,
- * so this is where the A1 team reads the design details in EmpireVu.
+ * Fold the product line, fulfillment, design, and links into the one free-text
+ * field the contract preserves. The intake stores `message` on the contact +
+ * activity + notification, so this is where the team reads the details in EmpireVu.
  */
-function buildMessage(lead: HolyShipLead): string | undefined {
+function buildMessage(lead: BoatnamesLead): string | undefined {
+  const product = lead.line === "vinyl" ? "Cut vinyl" : "Cast acrylic";
   const design = [
     lead.boatName?.trim() ? `"${lead.boatName.trim()}"` : undefined,
     lead.hailingPort?.trim() ? `Port: ${lead.hailingPort.trim()}` : undefined,
@@ -101,8 +113,11 @@ function buildMessage(lead: HolyShipLead): string | undefined {
   ].filter((p): p is string => Boolean(p));
 
   const lines = [
-    `Custom cast acrylic transom lettering${design.length ? ` — ${design.join(" · ")}` : ""}.`,
+    `${product} boat name lettering${design.length ? ` — ${design.join(" · ")}` : ""}.`,
   ];
+  if (lead.fulfillment) {
+    lines.push(`Fulfillment: ${FULFILLMENT_LABEL[lead.fulfillment] ?? lead.fulfillment}.`);
+  }
   if (lead.transomWidthIn) lines.push(`Transom width: ${lead.transomWidthIn}".`);
   if (lead.previewUrl) lines.push(`Preview: ${lead.previewUrl}`);
   if (lead.photoUrl) lines.push(`Photo: ${lead.photoUrl}`);
@@ -110,20 +125,19 @@ function buildMessage(lead: HolyShipLead): string | undefined {
   return joinText(lines.join("\n"), lead.notes);
 }
 
-/** Map a Holy Ship lead to the canonical envelope. Mirrors buildCareEnvelope. */
-export function buildHolyShipEnvelope(lead: HolyShipLead, receivedAt: string): LeadEnvelope {
+/** Map a boatnames.ca lead to the canonical envelope. Mirrors the sibling builders. */
+export function buildBoatnamesEnvelope(lead: BoatnamesLead, receivedAt: string): LeadEnvelope {
+  const page = lead.fulfillment === "install" ? "/install" : "/#quote";
   return {
     schemaVersion: 1,
-    source: HOLYSHIP_SOURCE,
-    sourceSite: HOLYSHIP_SOURCE_SITE,
+    source: boatnamesSource(lead.fulfillment),
+    sourceSite: BOATNAMES_SOURCE_SITE,
     formType: "quote",
     receivedAt,
     contact: { name: lead.name, email: lead.email, phone: lead.phone },
     message: buildMessage(lead),
     asset: compact({ makeModel: lead.boatModel, marina: lead.marina }),
-    meta: compact({ site: "holyship.a1marinecare.ca", page: "/#quote", utm: lead.utm }) ?? {
-      site: "holyship.a1marinecare.ca",
-    },
+    meta: compact({ site: "boatnames.ca", page, utm: lead.utm }) ?? { site: "boatnames.ca" },
   };
 }
 

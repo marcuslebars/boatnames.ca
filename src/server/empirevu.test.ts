@@ -5,37 +5,50 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-  buildHolyShipEnvelope,
+  buildBoatnamesEnvelope,
   forwardToEmpireVu,
   signEmpireVuBody,
   type LeadEnvelope,
 } from "./empirevu";
 import { leadEnvelopeSchema } from "./lead-envelope-schema";
-import { SAMPLE_HOLYSHIP_LEAD, SAMPLE_RECEIVED_AT } from "./__fixtures__/holyship-sample";
+import {
+  SAMPLE_SHIP_ACRYLIC,
+  SAMPLE_INSTALL_VINYL,
+  SAMPLE_RECEIVED_AT,
+} from "./__fixtures__/boatnames-sample";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name: string) =>
   JSON.parse(readFileSync(join(here, "__fixtures__", "lead-envelopes", name), "utf8"));
 
-describe("buildHolyShipEnvelope matches the golden fixture (drift guard)", () => {
-  it("quote -> canonical envelope", () => {
-    expect(buildHolyShipEnvelope(SAMPLE_HOLYSHIP_LEAD, SAMPLE_RECEIVED_AT)).toEqual(
-      fixture("holyship-quote.json"),
+describe("buildBoatnamesEnvelope matches the golden fixtures (drift guard)", () => {
+  it("ship + acrylic -> canonical envelope", () => {
+    expect(buildBoatnamesEnvelope(SAMPLE_SHIP_ACRYLIC, SAMPLE_RECEIVED_AT)).toEqual(
+      fixture("boatnames-ship-acrylic.json"),
+    );
+  });
+
+  it("install + vinyl -> canonical envelope", () => {
+    expect(buildBoatnamesEnvelope(SAMPLE_INSTALL_VINYL, SAMPLE_RECEIVED_AT)).toEqual(
+      fixture("boatnames-install-vinyl.json"),
     );
   });
 
   it("survives the canonical schema WITHOUT losing keys (nothing silently stripped)", () => {
-    const env = buildHolyShipEnvelope(SAMPLE_HOLYSHIP_LEAD, SAMPLE_RECEIVED_AT);
     // A plain z.object strips unknowns; if the builder ever emitted a field the
     // schema doesn't know, the intake would store a hollow lead. Round-trip
     // equality proves every field the builder emits has a home in the contract.
-    expect(leadEnvelopeSchema.parse(env)).toEqual(env);
+    for (const lead of [SAMPLE_SHIP_ACRYLIC, SAMPLE_INSTALL_VINYL]) {
+      const env = buildBoatnamesEnvelope(lead, SAMPLE_RECEIVED_AT);
+      expect(leadEnvelopeSchema.parse(env)).toEqual(env);
+    }
   });
 });
 
-describe("the canonical + Holy Ship fixtures are all schema-valid", () => {
+describe("the canonical + boatnames fixtures are all schema-valid", () => {
   for (const name of [
-    "holyship-quote.json",
+    "boatnames-ship-acrylic.json",
+    "boatnames-install-vinyl.json",
     "care-contact.json",
     "care-booking.json",
     "storage-quote.json",
@@ -48,7 +61,7 @@ describe("the canonical + Holy Ship fixtures are all schema-valid", () => {
 });
 
 describe("forwardToEmpireVu is gated, additive, best-effort (mirrors the siblings)", () => {
-  const envelope: LeadEnvelope = buildHolyShipEnvelope(SAMPLE_HOLYSHIP_LEAD, SAMPLE_RECEIVED_AT);
+  const envelope: LeadEnvelope = buildBoatnamesEnvelope(SAMPLE_SHIP_ACRYLIC, SAMPLE_RECEIVED_AT);
   const realFetch = globalThis.fetch;
 
   afterEach(() => {

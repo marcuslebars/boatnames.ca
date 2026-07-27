@@ -74,16 +74,25 @@ Public: `VITE_SITE_URL` = the production origin.
 
 ## 7. EmpireVu forward — stays OFF until you flip it
 
-Holy Ship is the 4th spoke (`sourceSite: a1marinecare`, `source: holyship_acrylic_quote`).
-The forward is gated off by default. To enable, in order:
+boatnames.ca forwards as a **new EmpireVu company**: slug `a1-boatnames` under the `a1-group`
+org (NOT a service line of a1-marine-care). Envelope: `sourceSite: boatnames`, `source:
+boatnames_quote_ship | _install | _unsure`, `formType: quote`. The forward is gated off by
+default. To enable, in order:
 
-1. **Cross-repo:** add `src/server/__fixtures__/lead-envelopes/holyship-quote.json`
-   to syncoree's intake fixtures and confirm it validates there. Until this lands,
-   the intake side isn't proven against this payload.
-2. Set `EMPIREVU_INTAKE_URL` + `EMPIREVU_INTAKE_SECRET`; remove `EMPIREVU_INTAKE_DISABLED=1`.
-3. Replay the accumulated envelopes: `bun scripts/replay-outbox.ts skipped_gated`
-   — diff a batch against the fixtures first; each should resolve to a CRM contact,
-   not `raw_leads`.
+1. **Seed the company (cross-repo, EmpireVu):** create the `a1-boatnames` company under
+   `a1-group`, matching the sibling slug convention (`a1-marine-care` / `a1-marine-storage` /
+   `a1-coatings`), and map `sourceSite: boatnames` to it. **Sequencing matters** — the intake
+   resolves the company from `sourceSite` at lead time, so a lead arriving before the seed lands
+   in `raw_leads` instead of matching a contact. Keep the gate OFF until the seed is confirmed.
+   (This repo can't reach EmpireVu — the seed SQL is produced separately; see the handoff.)
+2. **Sync the fixtures (cross-repo):** add
+   `src/server/__fixtures__/lead-envelopes/boatnames-ship-acrylic.json` and
+   `boatnames-install-vinyl.json` to EmpireVu's intake fixtures and confirm they validate there.
+3. Set `EMPIREVU_INTAKE_URL` + `EMPIREVU_INTAKE_SECRET`; remove `EMPIREVU_INTAKE_DISABLED=1`.
+4. Replay the accumulated envelopes: `bun scripts/replay-outbox.ts skipped_gated` — diff a batch
+   against the fixtures first; each should resolve to a CRM contact, not `raw_leads`. Rows written
+   under the old holyship shape are already marked `superseded` (migration
+   `20260727000200_supersede_holyship_outbox.sql`) and won't replay.
 
 ## 8. Pre-launch QA (needs a deployed/preview build)
 

@@ -8,7 +8,7 @@ import {
 } from "@/components/site/quote-schema";
 
 import { sendLeadNotification } from "./email";
-import { buildHolyShipEnvelope, type HolyShipLead } from "./empirevu";
+import { buildBoatnamesEnvelope, type BoatnamesLead } from "./empirevu";
 import type { SniffedImageType } from "./magic-bytes";
 import { forwardAndMark, insertOutbox } from "./outbox";
 import { checkRateLimit } from "./rate-limit";
@@ -192,7 +192,7 @@ export async function handleQuoteSubmission(sub: QuoteSubmission): Promise<Quote
 
   // (6) Build + persist the signed-lead envelope (durable) — even though the
   // forward is gated off, so flipping it on later is a controlled replay.
-  const lead: HolyShipLead = {
+  const lead: BoatnamesLead = {
     name: v.name,
     email: v.email,
     phone: v.phone,
@@ -212,7 +212,7 @@ export async function handleQuoteSubmission(sub: QuoteSubmission): Promise<Quote
     previewUrl,
     utm,
   };
-  const envelope = buildHolyShipEnvelope(lead, new Date().toISOString());
+  const envelope = buildBoatnamesEnvelope(lead, new Date().toISOString());
   const outboxId = await insertOutbox(quoteId, quoteId, envelope);
 
   // (7) Non-blocking follow-up. The visitor's success is already decided; the
