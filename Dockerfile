@@ -14,7 +14,7 @@ RUN bun install --frozen-lockfile
 
 # Public (VITE_) build-time config is inlined into the client bundle, so it must
 # be present at BUILD time. The platform can pass these as build args; unset ->
-# the code's defaults apply (SITE_URL -> https://holyship.a1marinecare.ca).
+# the code's defaults apply (SITE_URL -> https://boatnames.ca).
 # Server-only secrets (SUPABASE_*, RESEND_API_KEY, EMPIREVU_*) are RUNTIME env —
 # never build args, so they never enter an image layer.
 ARG VITE_SITE_URL

@@ -167,7 +167,7 @@ export async function handleQuoteSubmission(sub: QuoteSubmission): Promise<Quote
       consent_text: fields.consent_text || null,
       consent_at: new Date().toISOString(),
       consent_ip: ip,
-      source: fields.source || "holyship.a1marinecare.ca",
+      source: fields.source || "boatnames.ca",
       preview_url: previewUrl ?? null,
       utm: utm ?? null,
       referrer,

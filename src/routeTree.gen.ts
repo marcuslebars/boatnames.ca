@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as InstallRouteImport } from './routes/install'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GalleryHolyShipRouteImport } from './routes/gallery/holy-ship'
 import { Route as ApiQuoteRouteImport } from './routes/api/quote'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 
@@ -19,9 +21,19 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InstallRoute = InstallRouteImport.update({
+  id: '/install',
+  path: '/install',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GalleryHolyShipRoute = GalleryHolyShipRouteImport.update({
+  id: '/gallery/holy-ship',
+  path: '/gallery/holy-ship',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiQuoteRoute = ApiQuoteRouteImport.update({
@@ -37,36 +49,63 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/install': typeof InstallRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/health': typeof ApiHealthRoute
   '/api/quote': typeof ApiQuoteRoute
+  '/gallery/holy-ship': typeof GalleryHolyShipRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/install': typeof InstallRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/health': typeof ApiHealthRoute
   '/api/quote': typeof ApiQuoteRoute
+  '/gallery/holy-ship': typeof GalleryHolyShipRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/install': typeof InstallRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/health': typeof ApiHealthRoute
   '/api/quote': typeof ApiQuoteRoute
+  '/gallery/holy-ship': typeof GalleryHolyShipRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sitemap.xml' | '/api/health' | '/api/quote'
+  fullPaths:
+    | '/'
+    | '/install'
+    | '/sitemap.xml'
+    | '/api/health'
+    | '/api/quote'
+    | '/gallery/holy-ship'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sitemap.xml' | '/api/health' | '/api/quote'
-  id: '__root__' | '/' | '/sitemap.xml' | '/api/health' | '/api/quote'
+  to:
+    | '/'
+    | '/install'
+    | '/sitemap.xml'
+    | '/api/health'
+    | '/api/quote'
+    | '/gallery/holy-ship'
+  id:
+    | '__root__'
+    | '/'
+    | '/install'
+    | '/sitemap.xml'
+    | '/api/health'
+    | '/api/quote'
+    | '/gallery/holy-ship'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  InstallRoute: typeof InstallRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiQuoteRoute: typeof ApiQuoteRoute
+  GalleryHolyShipRoute: typeof GalleryHolyShipRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -78,11 +117,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/install': {
+      id: '/install'
+      path: '/install'
+      fullPath: '/install'
+      preLoaderRoute: typeof InstallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gallery/holy-ship': {
+      id: '/gallery/holy-ship'
+      path: '/gallery/holy-ship'
+      fullPath: '/gallery/holy-ship'
+      preLoaderRoute: typeof GalleryHolyShipRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/quote': {
@@ -104,9 +157,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  InstallRoute: InstallRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiQuoteRoute: ApiQuoteRoute,
+  GalleryHolyShipRoute: GalleryHolyShipRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

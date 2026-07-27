@@ -4,10 +4,19 @@ Guidance for working in this repository.
 
 ## What this is
 
-A single-page marketing site for **Holy Ship** — a Meridian 408 Motoryacht
-detailed by **A1 Marine Care** — whose job is selling a new custom **cast
-acrylic boat-name lettering** service. The page shows the boat, the detailing
-work, an interactive transom previewer, and a quote form.
+**boatnames.ca** — a standalone national brand selling custom **boat name
+lettering** (cut vinyl and dimensional cast acrylic) across Canada, positioned as
+**"An A1 Company."** The interactive transom previewer is the product: visitors
+design a name, pick a product line + font + finish + size, and see it on a
+transom before buying.
+
+Two fulfillment tiers: (1) **ship anywhere in Canada** — template from the
+customer's photos, cut, ship with an application guide; (2) **white-glove
+install** by A1 Marine Care crews, geo-scoped to Georgian Bay, Lake Simcoe, and
+the Trent-Severn (`/install`). The site leads with the national product; install
+is the geo-scoped upsell. **Holy Ship** (a Meridian 408) is demoted to a case
+study at `/gallery/holy-ship`. A1 endorsement is footer-weight — never in the
+masthead.
 
 ## Stack
 
@@ -74,10 +83,13 @@ must stay distinct from each other and from the UI font. Never collapse them.
 
 ## Where things live
 
-- `src/routes/` — TanStack file-based routes. `index.tsx` is the whole landing
-  page (hero, sections, header/footer are local components). `__root.tsx` holds
-  document `<head>`, error boundary, and 404. `sitemap[.]xml.ts` is a server
-  route. `src/routes/api/**` (added later) holds backend endpoints.
+- `src/routes/` — TanStack file-based routes. `index.tsx` is the product
+  homepage; `gallery/holy-ship.tsx` is the case study (sibling-ready as
+  `gallery/<slug>`); `install.tsx` is the white-glove tier. Shared chrome
+  (`SiteHeader`, `SiteFooter`, `Section`, `useRevealOnScroll`) lives in
+  `src/components/site/Layout.tsx`. `__root.tsx` holds document `<head>`, error
+  boundary, and 404. `sitemap[.]xml.ts` is a server route. `src/routes/api/**`
+  holds backend endpoints.
 - `src/components/site/` — **hand-authored** site components: `TransomPreviewer`,
   `QuoteForm`, `BeforeAfterSlider`, `ImgSlot`, and `previewer-types.ts`. Edit
   these freely.

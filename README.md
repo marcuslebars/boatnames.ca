@@ -1,12 +1,15 @@
-# Holy Ship — A1 Marine Care
+# boatnames.ca
 
-Marketing site for **A1 Marine Care**'s custom **cast acrylic boat-name
-lettering** service, built around a reference job: **Holy Ship**, a Meridian 408
-Motoryacht detailed on Georgian Bay.
+Custom **boat name lettering** — cut vinyl and dimensional cast acrylic —
+designed online and sold across Canada. **boatnames.ca** is a standalone brand,
+**an A1 company**.
 
-It's a single landing page — the boat, the detailing work, an interactive
-**transom previewer** (type a name, pick a font/finish/size, see it on a
-transom), and a **quote form** that feeds A1's lead pipeline.
+The interactive **transom previewer** is the product: type a name, pick a product
+line (vinyl/acrylic), font, finish, and size, and see it on a transom before you
+buy. Two fulfillment tiers — **ship anywhere in Canada** with an application
+guide, or **white-glove install** by A1 Marine Care crews across Georgian Bay,
+Lake Simcoe, and the Trent-Severn. A **quote form** feeds the A1 lead pipeline.
+**Holy Ship** (a Meridian 408) lives on as a case study at `/gallery/holy-ship`.
 
 ## Stack
 
@@ -40,10 +43,10 @@ server-only and must never carry the `VITE_` prefix. Copy `.env.example` to
 
 Client (`VITE_`) variables:
 
-| Variable              | Required | Purpose                                                                                                 |
-| --------------------- | -------- | ------------------------------------------------------------------------------------------------------- |
-| `VITE_SITE_URL`       | no       | Canonical site origin for absolute OG images / sitemap. Defaults to `https://holyship.a1marinecare.ca`. |
-| `VITE_ERROR_ENDPOINT` | no       | If set, client errors are POSTed here (`{ message, stack, route, userAgent }`).                         |
+| Variable              | Required | Purpose                                                                                     |
+| --------------------- | -------- | ------------------------------------------------------------------------------------------- |
+| `VITE_SITE_URL`       | no       | Canonical site origin for absolute OG images / sitemap. Defaults to `https://boatnames.ca`. |
+| `VITE_ERROR_ENDPOINT` | no       | If set, client errors are POSTed here (`{ message, stack, route, userAgent }`).             |
 
 Server-only variables (added with the backend) include the Supabase connection,
 the Resend API key, and the EmpireVu forward secret. They are documented in
@@ -56,8 +59,9 @@ the Resend API key, and the EmpireVu forward secret. They are documented in
 
 ## Project layout
 
-- `src/routes/` — pages and server routes (`index.tsx` is the landing page;
-  `api/**` holds backend endpoints).
+- `src/routes/` — pages and server routes (`index.tsx` product homepage,
+  `gallery/holy-ship.tsx` case study, `install.tsx` white-glove tier; `api/**`
+  backend endpoints). Shared chrome lives in `src/components/site/Layout.tsx`.
 - `src/components/site/` — hand-authored site components (previewer, quote form,
   before/after slider).
 - `src/components/ui/` — vendored shadcn/ui primitives (do not hand-edit).

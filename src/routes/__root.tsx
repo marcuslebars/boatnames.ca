@@ -12,9 +12,9 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportError } from "../lib/report-error";
 import { SITE_URL } from "../lib/site";
-const SITE_TITLE = "Custom Acrylic Boat Name Lettering | Georgian Bay | A1 Marine Care";
+const SITE_TITLE = "Custom Boat Name Lettering — Vinyl & Acrylic | boatnames.ca";
 const SITE_DESCRIPTION =
-  "Dimensional cast acrylic boat name lettering and premium marine detailing in Midland and across Georgian Bay. Featuring Holy Ship, a Meridian 408 Motoryacht.";
+  "Design your boat's name online and see it on the transom before you buy. Cut vinyl and dimensional cast acrylic boat name lettering and decals, shipped across Canada. An A1 company.";
 const OG_IMAGE = `${SITE_URL}/images/transom-hero.jpg`;
 
 function NotFoundComponent() {
@@ -82,8 +82,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "author", content: "A1 Marine Care" },
-      { property: "og:site_name", content: "A1 Marine Care" },
+      { name: "author", content: "boatnames.ca" },
+      { property: "og:site_name", content: "boatnames.ca" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { title: SITE_TITLE },

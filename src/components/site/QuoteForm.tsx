@@ -73,7 +73,7 @@ export function QuoteForm({ prefill }: Props) {
     fd.set(TIMING_FIELD, String(startedAt.current));
     fd.set("preview_url", shareUrl);
     fd.set("consent_text", CONSENT_TEXT);
-    fd.set("source", "holyship.a1marinecare.ca");
+    fd.set("source", "boatnames.ca");
     for (const [key, val] of Object.entries(utm.current)) fd.set(key, val);
 
     // Per-font measured run length for the quote + CRM envelope.

@@ -34,8 +34,7 @@ export const serverEnv = {
   empirevuDisabled: () => process.env.EMPIREVU_INTAKE_DISABLED === "1",
 
   // Public site origin (also available client-side as VITE_SITE_URL)
-  siteUrl: () =>
-    optional("SITE_URL") ?? optional("VITE_SITE_URL") ?? "https://holyship.a1marinecare.ca",
+  siteUrl: () => optional("SITE_URL") ?? optional("VITE_SITE_URL") ?? "https://boatnames.ca",
 
   buildSha: () => optional("RAILWAY_GIT_COMMIT_SHA") ?? optional("BUILD_SHA") ?? "dev",
 };
