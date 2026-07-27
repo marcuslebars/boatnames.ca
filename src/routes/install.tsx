@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { QuoteForm } from "@/components/site/QuoteForm";
+import { type PreviewConfig } from "@/components/site/previewer-types";
 import { SiteHeader, SiteFooter, Section } from "@/components/site/Layout";
 import { useRevealOnScroll } from "@/components/site/use-reveal";
 import { SITE_URL } from "@/lib/site";
@@ -11,6 +13,17 @@ const CANONICAL = `${SITE_URL}/install`;
 // Phase 6 adds LocalBusiness JSON-LD here, scoped to the real service area with
 // the verified A1 NAP (still carrying the unresolved real-phone/address flag).
 const SERVICE_AREA = ["Georgian Bay", "Lake Simcoe", "Trent-Severn Waterway"];
+
+// The install page has no previewer, so the embedded quote form starts from a
+// neutral acrylic design; the visitor fills in the details.
+const INSTALL_PREFILL: PreviewConfig = {
+  name: "",
+  port: "",
+  line: "acrylic",
+  font: "transom-serif",
+  finish: "mirror-gold",
+  size: 8,
+};
 
 export const Route = createFileRoute("/install")({
   component: InstallPage,
@@ -148,27 +161,23 @@ function InstallPage() {
         </p>
       </Section>
 
-      {/* QUOTE — Phase 4 embeds the shared tier-aware form here, preselected to install. */}
+      {/* QUOTE — the shared tier-aware form, preselected to the install tier. */}
       <section id="install-quote" className="border-t border-[color:var(--wake)]/15">
-        <div className="mx-auto max-w-5xl px-6 py-24 text-center lg:px-10 lg:py-32">
-          <p className="font-mono text-[11px] tracking-[0.28em] text-[color:var(--polish)]">
-            INSTALL QUOTE
-          </p>
-          <h2 className="mx-auto mt-4 max-w-2xl font-sans text-4xl font-bold uppercase leading-[0.95] tracking-tight sm:text-5xl">
-            Book your install.
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-[color:var(--gelcoat)]/75">
-            Tell us your boat, your marina, and the name. We'll reply within one business day with a
-            proof, a price, and an install window.
-          </p>
-          <div className="mt-8">
-            <Link
-              to="/"
-              hash="quote"
-              className="inline-flex items-center gap-3 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-5 py-3 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90"
-            >
-              START AN INSTALL QUOTE →
-            </Link>
+        <div className="mx-auto max-w-5xl px-6 py-24 lg:px-10 lg:py-32">
+          <div className="reveal">
+            <p className="font-mono text-[11px] tracking-[0.28em] text-[color:var(--polish)]">
+              INSTALL QUOTE
+            </p>
+            <h2 className="mt-4 max-w-3xl font-sans text-5xl font-bold uppercase leading-[0.95] tracking-tight sm:text-6xl">
+              Book your install.
+            </h2>
+            <p className="mt-4 max-w-xl text-[color:var(--gelcoat)]/75">
+              Tell us your boat, your marina, and the name. We'll reply within one business day with
+              a proof, a price, and an install window.
+            </p>
+          </div>
+          <div className="reveal mt-12">
+            <QuoteForm prefill={INSTALL_PREFILL} defaultFulfillment="install" />
           </div>
         </div>
       </section>

@@ -159,6 +159,8 @@ export async function handleQuoteSubmission(sub: QuoteSubmission): Promise<Quote
       hailing_port: v.hailing_port ?? null,
       font: v.font,
       finish: v.finish,
+      product_line: v.line,
+      fulfillment: v.fulfillment,
       letter_height_in: v.letter_height,
       run_length_in: runLengthIn,
       notes: v.notes ?? null,
@@ -200,6 +202,8 @@ export async function handleQuoteSubmission(sub: QuoteSubmission): Promise<Quote
     hailingPort: v.hailing_port,
     font: fontLabel,
     finish: finishLabel,
+    line: v.line,
+    fulfillment: v.fulfillment,
     letterHeightIn: v.letter_height,
     runLengthIn: runLengthIn ?? undefined,
     transomWidthIn: v.transom_width,
@@ -237,7 +241,7 @@ function buildLeadEmail(
   },
 ) {
   const name = v.boat_name || "(no name yet)";
-  const subject = `New Holy Ship quote — "${name}"${extra.finishLabel ? ` · ${extra.finishLabel}` : ""}`;
+  const subject = `New boatnames.ca ${v.line} quote — "${name}"${extra.finishLabel ? ` · ${extra.finishLabel}` : ""}`;
 
   const rows: Array<[string, string | undefined]> = [
     ["Name", v.name],
@@ -245,9 +249,11 @@ function buildLeadEmail(
     ["Phone", v.phone],
     ["Boat", v.boat_model],
     ["Marina / town", v.marina],
+    ["Fulfillment", v.fulfillment],
     ["Transom width", v.transom_width ? `${v.transom_width}"` : undefined],
     ["Boat name", v.boat_name],
     ["Hailing port", v.hailing_port],
+    ["Product line", v.line],
     ["Font", extra.fontLabel ?? v.font],
     ["Finish", extra.finishLabel ?? v.finish],
     ["Letter height", `${v.letter_height}"`],

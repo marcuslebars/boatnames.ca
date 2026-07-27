@@ -61,6 +61,8 @@ export interface HolyShipLead {
   hailingPort?: string;
   font?: string; // human label, e.g. "Transom Serif"
   finish?: string; // human label, e.g. "Mirror Gold"
+  line?: string; // product line: "vinyl" | "acrylic"
+  fulfillment?: string; // "ship" | "install" | "unsure"
   letterHeightIn?: number;
   runLengthIn?: number;
   transomWidthIn?: number;

@@ -22,39 +22,54 @@ const optionalNumber = (schema: z.ZodType<number>) =>
  * honeypot, timing, source, preview_url, consent_text — are stripped here and
  * handled separately.
  */
-export const quoteSchema = z.object({
-  name: z.string().trim().min(1, "Please tell us your name.").max(120),
-  email: z
-    .string()
-    .trim()
-    .min(1, "An email is required.")
-    .email("That email address doesn't look right."),
-  phone: optionalText(40),
-  boat_model: optionalText(120),
-  marina: optionalText(120),
-  transom_width: optionalNumber(
-    z.coerce.number().positive("Transom width must be a positive number.").max(600),
-  ),
-  boat_name: optionalText(18),
-  hailing_port: optionalText(24),
-  font: z.enum(fontKeys),
-  finish: z.enum(finishKeys),
-  letter_height: z.preprocess(
-    (v) => (v === "" || v == null ? undefined : v),
-    z.coerce
-      .number()
-      .min(3, 'Letter height must be at least 3".')
-      .max(14, 'Letter height caps at 14".'),
-  ),
-  notes: optionalText(2000),
-  consent: z
-    .string()
-    .optional()
-    .refine((v) => v === "on", {
-      message: "Please confirm you're okay with us contacting you about this quote.",
-    }),
-});
+export const quoteSchema = z
+  .object({
+    name: z.string().trim().min(1, "Please tell us your name.").max(120),
+    email: z
+      .string()
+      .trim()
+      .min(1, "An email is required.")
+      .email("That email address doesn't look right."),
+    phone: optionalText(40),
+    boat_model: optionalText(120),
+    marina: optionalText(120),
+    transom_width: optionalNumber(
+      z.coerce.number().positive("Transom width must be a positive number.").max(600),
+    ),
+    boat_name: optionalText(18),
+    hailing_port: optionalText(24),
+    font: z.enum(fontKeys),
+    finish: z.enum(finishKeys),
+    line: z.enum(["vinyl", "acrylic"]).optional().default("acrylic"),
+    fulfillment: z.enum(["ship", "install", "unsure"]).optional().default("unsure"),
+    letter_height: z.preprocess(
+      (v) => (v === "" || v == null ? undefined : v),
+      z.coerce
+        .number()
+        .min(3, 'Letter height must be at least 3".')
+        .max(14, 'Letter height caps at 14".'),
+    ),
+    notes: optionalText(2000),
+    consent: z
+      .string()
+      .optional()
+      .refine((v) => v === "on", {
+        message: "Please confirm you're okay with us contacting you about this quote.",
+      }),
+  })
+  .superRefine((d, ctx) => {
+    // Soft geo-gate: a local install needs a stated location so we can confirm
+    // the service area (or offer ship-with-guide instead). No IP guessing.
+    if (d.fulfillment === "install" && !d.marina?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["marina"],
+        message: "For a local install, add your marina or town so we can confirm the area.",
+      });
+    }
+  });
 
+export type Fulfillment = "ship" | "install" | "unsure";
 export type QuoteInput = z.infer<typeof quoteSchema>;
 
 // Exact CASL consent wording the visitor agrees to. Sent with the submission and

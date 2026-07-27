@@ -1,11 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import { estimateRunLengthIn } from "./previewer-measure";
-import { ALL_FINISHES, FONT_OPTIONS, type PreviewConfig } from "./previewer-types";
+import {
+  FONT_OPTIONS,
+  defaultFinishFor,
+  finishOptionsFor,
+  type Finish,
+  type PreviewConfig,
+  type ProductLine,
+} from "./previewer-types";
 import { previewShareUrl } from "./previewer-url";
-import { CONSENT_TEXT, HONEYPOT_FIELD, quoteSchema, TIMING_FIELD } from "./quote-schema";
+import {
+  CONSENT_TEXT,
+  type Fulfillment,
+  HONEYPOT_FIELD,
+  quoteSchema,
+  TIMING_FIELD,
+} from "./quote-schema";
 
 type Props = {
   prefill: PreviewConfig;
+  // /install embeds this form preselected to the install tier; the homepage
+  // leads with the national product, so it defaults to "ship".
+  defaultFulfillment?: Fulfillment;
 };
 
 type Status = "idle" | "sending" | "ok" | "error";
@@ -15,11 +31,21 @@ type Status = "idle" | "sending" | "ok" | "error";
 // loudly here — there is no fake-success fallback.
 const ENDPOINT = "/api/quote";
 
-export function QuoteForm({ prefill }: Props) {
+const FULFILLMENT_OPTIONS: [Fulfillment, string][] = [
+  ["ship", "Ship it to me"],
+  ["install", "Install it for me"],
+  ["unsure", "Not sure yet"],
+];
+
+export function QuoteForm({ prefill, defaultFulfillment = "ship" }: Props) {
   const [status, setStatus] = useState<Status>("idle");
   const [errMsg, setErrMsg] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [shareUrl, setShareUrl] = useState("");
+  // Controlled so the two finish sets never cross and the tier UI can react.
+  const [line, setLine] = useState<ProductLine>(prefill.line);
+  const [finish, setFinish] = useState<Finish>(prefill.finish);
+  const [fulfillment, setFulfillment] = useState<Fulfillment>(defaultFulfillment);
   const startedAt = useRef<number>(0);
 
   // Start the anti-bot fill timer once the form is interactive.
@@ -111,9 +137,7 @@ export function QuoteForm({ prefill }: Props) {
     } catch (err) {
       console.error(err);
       setStatus("error");
-      setErrMsg(
-        "We couldn't send that just now. Please try again, or email hello@a1marinecare.ca.",
-      );
+      setErrMsg("We couldn't send that just now. Please try again, or email hello@boatnames.ca.");
     }
   }
 
@@ -125,8 +149,9 @@ export function QuoteForm({ prefill }: Props) {
           We'll send a proof and a price within one business day.
         </h3>
         <p className="mt-3 max-w-xl text-[color:var(--wake)]">
-          If we need a clearer transom photo or a measurement we'll email first before quoting. No
-          auto-replies, no drip sequence.
+          {fulfillment === "install"
+            ? "For a local install we'll also confirm an install window. If we need a clearer transom photo or a measurement, we'll email first before quoting."
+            : "If we need a clearer transom photo or a measurement we'll email first before quoting. No auto-replies, no drip sequence."}
         </p>
         {shareUrl && (
           <a
@@ -156,7 +181,9 @@ export function QuoteForm({ prefill }: Props) {
   // Key on the design signature so the uncontrolled design fields re-seed from
   // the CURRENT previewer config (defaultValue only applies on mount, and the
   // URL hydration updates the config after the first render).
-  const designKey = `${prefill.name}|${prefill.port}|${prefill.font}|${prefill.finish}|${prefill.size}`;
+  const designKey = `${prefill.name}|${prefill.port}|${prefill.line}|${prefill.font}|${prefill.finish}|${prefill.size}`;
+
+  const shipTier = fulfillment !== "install"; // ship or unsure → photo is the template input
 
   return (
     <form
@@ -174,7 +201,56 @@ export function QuoteForm({ prefill }: Props) {
         placeholder="e.g. Meridian 408"
         error={fieldErrors.boat_model}
       />
-      <Input name="marina" label="Marina or town" error={fieldErrors.marina} />
+
+      {/* Fulfillment tier — decides whether marina is required and how the photo
+          is framed. Buttons drive state; a hidden input carries it into FormData. */}
+      <div className="sm:col-span-2">
+        <Label>How would you like it?</Label>
+        <div
+          role="radiogroup"
+          aria-label="Fulfillment preference"
+          className="grid grid-cols-1 gap-2 sm:grid-cols-3"
+        >
+          {FULFILLMENT_OPTIONS.map(([val, label]) => {
+            const active = fulfillment === val;
+            return (
+              <button
+                key={val}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => setFulfillment(val)}
+                className={`rounded-sm border px-3 py-2.5 text-left font-sans text-sm transition ${
+                  active
+                    ? "border-[color:var(--polish)] bg-[color:var(--polish)]/10 text-[color:var(--gelcoat)]"
+                    : "border-[color:var(--wake)]/25 text-[color:var(--wake)] hover:border-[color:var(--wake)]/45"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        <input type="hidden" name="fulfillment" value={fulfillment} />
+        {fulfillment === "install" && (
+          <p className="mt-3 rounded-sm border border-[color:var(--wake)]/20 bg-[color:var(--bay)]/12 p-3 text-xs leading-relaxed text-[color:var(--gelcoat)]/80">
+            Install covers{" "}
+            <span className="text-[color:var(--gelcoat)]">
+              Georgian Bay, Lake Simcoe, and the Trent-Severn
+            </span>
+            . Outside that? We'll ship your lettering with an application guide instead — just tell
+            us your marina or town below.
+          </p>
+        )}
+      </div>
+
+      <Input
+        name="marina"
+        label={
+          fulfillment === "install" ? "Marina or town (required for install)" : "Marina or town"
+        }
+        error={fieldErrors.marina}
+      />
       <Input
         name="transom_width"
         label="Transom width (inches)"
@@ -182,6 +258,26 @@ export function QuoteForm({ prefill }: Props) {
         min={12}
         error={fieldErrors.transom_width}
       />
+
+      {/* Photo. For a shipped order this IS the templating input, so it leads and
+          is emphasized; for install a crew measures on-site, so it's optional. */}
+      <div className="sm:col-span-2">
+        <Label>
+          {shipTier ? "Transom photo — we template from this" : "Transom photo (optional)"}
+        </Label>
+        <input
+          name="photo"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic"
+          className="block w-full font-mono text-xs text-[color:var(--wake)] file:mr-4 file:rounded-sm file:border file:border-[color:var(--wake)]/30 file:bg-transparent file:px-3 file:py-2 file:text-[10px] file:tracking-widest file:text-[color:var(--gelcoat)] hover:file:border-[color:var(--polish)]"
+        />
+        <p className="mt-2 font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
+          {shipTier
+            ? "A CLEAN SQUARE-ON PHOTO IS HOW WE TEMPLATE AND CONFIRM DIMENSIONS BEFORE CUTTING. JPG, PNG, WEBP OR HEIC, UP TO 10 MB."
+            : "A CLEAN SQUARE-ON PHOTO HELPS US PREP. JPG, PNG, WEBP OR HEIC, UP TO 10 MB."}
+        </p>
+      </div>
+
       <Input
         name="boat_name"
         label="Boat name wanted"
@@ -196,6 +292,20 @@ export function QuoteForm({ prefill }: Props) {
         error={fieldErrors.hailing_port}
       />
 
+      <Select
+        name="line"
+        label="Product line"
+        value={line}
+        onChange={(e) => {
+          const nl = e.target.value as ProductLine;
+          setLine(nl);
+          setFinish(defaultFinishFor(nl));
+        }}
+        error={fieldErrors.line}
+      >
+        <option value="acrylic">Cast Acrylic — premium</option>
+        <option value="vinyl">Cut Vinyl — entry</option>
+      </Select>
       <Select name="font" label="Font" defaultValue={prefill.font} error={fieldErrors.font}>
         {FONT_OPTIONS.map((f) => (
           <option key={f.key} value={f.key}>
@@ -203,8 +313,14 @@ export function QuoteForm({ prefill }: Props) {
           </option>
         ))}
       </Select>
-      <Select name="finish" label="Finish" defaultValue={prefill.finish} error={fieldErrors.finish}>
-        {ALL_FINISHES.map((f) => (
+      <Select
+        name="finish"
+        label="Finish"
+        value={finish}
+        onChange={(e) => setFinish(e.target.value as Finish)}
+        error={fieldErrors.finish}
+      >
+        {finishOptionsFor(line).map((f) => (
           <option key={f.key} value={f.key}>
             {f.label}
           </option>
@@ -232,20 +348,6 @@ export function QuoteForm({ prefill }: Props) {
           className={inputCls}
           placeholder="Anything about the layout, timing, or the boat."
         />
-      </div>
-
-      <div className="sm:col-span-2">
-        <Label>Transom photo (optional)</Label>
-        <input
-          name="photo"
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/heic"
-          className="block w-full font-mono text-xs text-[color:var(--wake)] file:mr-4 file:rounded-sm file:border file:border-[color:var(--wake)]/30 file:bg-transparent file:px-3 file:py-2 file:text-[10px] file:tracking-widest file:text-[color:var(--gelcoat)] hover:file:border-[color:var(--polish)]"
-        />
-        <p className="mt-2 font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
-          A clean square-on photo lets us template without visiting the boat. JPG, PNG, WEBP or
-          HEIC, up to 10 MB.
-        </p>
       </div>
 
       {/* Honeypot: hidden from people, tempting to bots. Must stay empty. */}
