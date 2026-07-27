@@ -8,6 +8,7 @@ import {
   buildBoatnamesEnvelope,
   forwardToEmpireVu,
   signEmpireVuBody,
+  type BoatnamesLead,
   type LeadEnvelope,
 } from "./empirevu";
 import { leadEnvelopeSchema } from "./lead-envelope-schema";
@@ -32,6 +33,27 @@ describe("buildBoatnamesEnvelope matches the golden fixtures (drift guard)", () 
     expect(buildBoatnamesEnvelope(SAMPLE_INSTALL_VINYL, SAMPLE_RECEIVED_AT)).toEqual(
       fixture("boatnames-install-vinyl.json"),
     );
+  });
+
+  it("ignores order-domain fields — they never leak into the lead envelope", () => {
+    // Phase 8 guard: a future order flow must not be able to push order-domain
+    // data into the lead envelope. The builder reads only known lead fields, so
+    // extra keys are dropped entirely and the output is byte-identical.
+    const withOrderJunk = {
+      ...SAMPLE_SHIP_ACRYLIC,
+      orderId: "ord_abc123",
+      status: "invoiced",
+      subtotalCents: 12345,
+      paymentProvider: "stripe",
+      externalPaymentRef: "pi_test_ref",
+    } as BoatnamesLead;
+    const env = buildBoatnamesEnvelope(withOrderJunk, SAMPLE_RECEIVED_AT);
+    expect(env).toEqual(buildBoatnamesEnvelope(SAMPLE_SHIP_ACRYLIC, SAMPLE_RECEIVED_AT));
+    expect(leadEnvelopeSchema.parse(env)).toEqual(env);
+    const serialized = JSON.stringify(env);
+    for (const leaked of ["ord_abc123", "subtotal", "paymentProvider", "pi_test_ref", "stripe"]) {
+      expect(serialized).not.toContain(leaked);
+    }
   });
 
   it("survives the canonical schema WITHOUT losing keys (nothing silently stripped)", () => {

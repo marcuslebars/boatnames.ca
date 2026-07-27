@@ -142,3 +142,7 @@ default. To enable, in order:
   ship tier leads with the transom photo.
 - `?calibrate=1` on the previewer to fine-tune the lettering panel against the real
   photo if needed (`PANEL` in `src/components/site/TransomPreviewer.tsx`).
+- **Checkout seam stays server-only** (Phase 8): after `bun run build`,
+  `grep -riE "stripe|shopify|checkout" .output/public` must return nothing — no
+  payment identifier ships to the browser. The seam is inert unless
+  `CHECKOUT_ENABLED=1`; at launch leave it off (code defaults to off + manual).

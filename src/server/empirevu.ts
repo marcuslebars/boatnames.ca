@@ -125,7 +125,17 @@ function buildMessage(lead: BoatnamesLead): string | undefined {
   return joinText(lines.join("\n"), lead.notes);
 }
 
-/** Map a boatnames.ca lead to the canonical envelope. Mirrors the sibling builders. */
+/**
+ * Map a boatnames.ca lead to the canonical envelope. Mirrors the sibling builders.
+ *
+ * Forward-compat (Phase 8 checkout seam): this builder reads ONLY the lead fields
+ * referenced below. Product line + fulfillment already ride the free-text `message`
+ * (added in the rebrand). If a future order ever needs to reference its order id in
+ * the lead, it folds into `message` (or `meta`) — NEVER a new top-level key: the
+ * intake strips unknown keys (LEAD_SCHEMA.md / leadEnvelopeSchema), so order-domain
+ * data cannot ride as structured fields. The "ignores order-domain fields" test pins
+ * this so future order work can't leak schema-invalid keys into the lead envelope.
+ */
 export function buildBoatnamesEnvelope(lead: BoatnamesLead, receivedAt: string): LeadEnvelope {
   const page = lead.fulfillment === "install" ? "/install" : "/#quote";
   return {

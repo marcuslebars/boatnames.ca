@@ -16,6 +16,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as GalleryHolyShipRouteImport } from './routes/gallery/holy-ship'
 import { Route as ApiQuoteRouteImport } from './routes/api/quote'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiAdminOrdersRouteImport } from './routes/api/admin/orders'
+import { Route as ApiAdminOrdersIdStatusRouteImport } from './routes/api/admin/orders.$id.status'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -52,6 +54,16 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
   path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminOrdersRoute = ApiAdminOrdersRouteImport.update({
+  id: '/api/admin/orders',
+  path: '/api/admin/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminOrdersIdStatusRoute = ApiAdminOrdersIdStatusRouteImport.update({
+  id: '/$id/status',
+  path: '/$id/status',
+  getParentRoute: () => ApiAdminOrdersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +73,8 @@ export interface FileRoutesByFullPath {
   '/api/health': typeof ApiHealthRoute
   '/api/quote': typeof ApiQuoteRoute
   '/gallery/holy-ship': typeof GalleryHolyShipRoute
+  '/api/admin/orders': typeof ApiAdminOrdersRouteWithChildren
+  '/api/admin/orders/$id/status': typeof ApiAdminOrdersIdStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +84,8 @@ export interface FileRoutesByTo {
   '/api/health': typeof ApiHealthRoute
   '/api/quote': typeof ApiQuoteRoute
   '/gallery/holy-ship': typeof GalleryHolyShipRoute
+  '/api/admin/orders': typeof ApiAdminOrdersRouteWithChildren
+  '/api/admin/orders/$id/status': typeof ApiAdminOrdersIdStatusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +96,8 @@ export interface FileRoutesById {
   '/api/health': typeof ApiHealthRoute
   '/api/quote': typeof ApiQuoteRoute
   '/gallery/holy-ship': typeof GalleryHolyShipRoute
+  '/api/admin/orders': typeof ApiAdminOrdersRouteWithChildren
+  '/api/admin/orders/$id/status': typeof ApiAdminOrdersIdStatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +109,8 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/api/quote'
     | '/gallery/holy-ship'
+    | '/api/admin/orders'
+    | '/api/admin/orders/$id/status'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +120,8 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/api/quote'
     | '/gallery/holy-ship'
+    | '/api/admin/orders'
+    | '/api/admin/orders/$id/status'
   id:
     | '__root__'
     | '/'
@@ -109,6 +131,8 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/api/quote'
     | '/gallery/holy-ship'
+    | '/api/admin/orders'
+    | '/api/admin/orders/$id/status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +143,7 @@ export interface RootRouteChildren {
   ApiHealthRoute: typeof ApiHealthRoute
   ApiQuoteRoute: typeof ApiQuoteRoute
   GalleryHolyShipRoute: typeof GalleryHolyShipRoute
+  ApiAdminOrdersRoute: typeof ApiAdminOrdersRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -172,8 +197,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/orders': {
+      id: '/api/admin/orders'
+      path: '/api/admin/orders'
+      fullPath: '/api/admin/orders'
+      preLoaderRoute: typeof ApiAdminOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/orders/$id/status': {
+      id: '/api/admin/orders/$id/status'
+      path: '/$id/status'
+      fullPath: '/api/admin/orders/$id/status'
+      preLoaderRoute: typeof ApiAdminOrdersIdStatusRouteImport
+      parentRoute: typeof ApiAdminOrdersRoute
+    }
   }
 }
+
+interface ApiAdminOrdersRouteChildren {
+  ApiAdminOrdersIdStatusRoute: typeof ApiAdminOrdersIdStatusRoute
+}
+
+const ApiAdminOrdersRouteChildren: ApiAdminOrdersRouteChildren = {
+  ApiAdminOrdersIdStatusRoute: ApiAdminOrdersIdStatusRoute,
+}
+
+const ApiAdminOrdersRouteWithChildren = ApiAdminOrdersRoute._addFileChildren(
+  ApiAdminOrdersRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -183,6 +234,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHealthRoute: ApiHealthRoute,
   ApiQuoteRoute: ApiQuoteRoute,
   GalleryHolyShipRoute: GalleryHolyShipRoute,
+  ApiAdminOrdersRoute: ApiAdminOrdersRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
