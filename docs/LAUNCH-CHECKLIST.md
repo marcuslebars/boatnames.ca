@@ -1,76 +1,109 @@
-# Holy Ship — Launch Checklist
+# boatnames.ca — Launch Checklist
 
 Everything the code can't decide on its own, in one place. The site builds, lints,
 type-checks, and passes its unit tests today; these are the human/infra steps to
-go live.
+go live. boatnames.ca is a standalone national brand ("An A1 Company") selling
+vinyl + acrylic boat-name lettering, with Holy Ship demoted to a case study.
 
-## 1. Content to confirm — this is a real customer's boat on a public page
+## 1. Case-study content to verify — now public commercial proof
 
-**Unverifiable claims (AI-invented by the original Lovable build — confirm or correct):**
+The Holy Ship case study (`src/routes/gallery/holy-ship.tsx`) is a real customer's
+boat on a public commercial site. Every claim below was AI-invented by the original
+Lovable build and is flagged with `TODO(content)` — **confirm or correct before launch:**
 
-- "The owner keeps her at a **private slip north of Midland**." (`src/routes/index.tsx`, "THE BOAT")
+- "The owner keeps her at a **private slip north of Midland**."
 - "…**runs her regularly to the North Channel**."
 - "…**ten seasons** of sun and dock-side spray past her last polish."
-- Footer: "This page documents one customer boat, **shared with the owner's permission**." — confirm you have that permission.
-- The six-step "WHAT A1 DID" process now reads wash → wet sand → compound → polish → polymer
-  sealant → stainless/canvas (the owner confirmed the real job was wet-sand / compound / polish
+- Confirm you have the **owner's permission** to feature the boat publicly.
+- The six-step "WHAT A1 DID" process reads wash → wet sand → compound → polish →
+  polymer sealant → stainless/canvas (owner-confirmed: wet-sand / compound / polish
   then polymer seal — **not** ceramic coating).
 
-**Spec values — Meridian 408 model-line approximations, verify against the real hull:**
+**Spec values** (case-study `dl`) — Meridian 408 model-line approximations, verify
+against the real hull: LOA `42' 8"`, BEAM `13' 10"`, POWER `TWIN INBOARD`, HULL
+COLOUR `GELCOAT WHITE`.
 
-- LOA `42' 8"`, BEAM `13' 10"`, POWER `TWIN INBOARD`, HULL COLOUR `MIDNIGHT / GRAPHITE`.
+## 2. Real NAP (name / address / phone) — flagged `TODO(NAP)`
 
-## 2. Real NAP (name / address / phone) for the schema + footer
+- **Phone** `+1-705-000-0000` — placeholder in the `/install` LocalBusiness JSON-LD
+  (`src/routes/install.tsx`) and the footer `tel:` link + display text
+  (`src/components/site/Layout.tsx`). Replace with A1 Marine Care's real number.
+- **Email** `hello@boatnames.ca` — footer + quote error copy assume this inbox exists.
+  Confirm it's live (or repoint).
+- **Address** — only `Midland, ON` locality is set (install LocalBusiness). Add a
+  street address if you want it in the schema.
 
-Currently placeholders (flagged with `TODO(NAP)` in `src/routes/index.tsx`):
+## 3. Photography — shoot list for the boatnames structure
 
-- Phone `+1-705-000-0000` — appears in the LocalBusiness JSON-LD, the footer `tel:` link, and the footer display text.
-- Email `hello@a1marinecare.ca` — confirm this is the right inbox.
-- Address — only `Midland, ON` locality is set; add a street address if you want it in the schema.
+Each `ImgSlot` renders a labelled placeholder tile until the real file exists.
 
-## 3. Photography — only the five `finish-*.jpg` swatches are still missing
+**Case-study set — present (owner's photos):**
 
-Each renders a labelled placeholder tile until the real file exists. Paths + alt text:
+| File (`public/images/…`) | Used on                                                     |
+| ------------------------ | ----------------------------------------------------------- |
+| `holyship-hero.jpg`      | case-study hero + homepage OG (interim)                     |
+| `holyship-gallery1.jpg`  | case-study feature + slider "after" + homepage proof teaser |
+| `holyship-before.jpg`    | case-study slider "before" (old vinyl name)                 |
+| `holyship-hull-side.jpg` | case-study gallery                                          |
+| `holyship-408-badge.jpg` | case-study gallery                                          |
 
-| File (`public/images/…`)   | Alt text                                                            |
-| -------------------------- | ------------------------------------------------------------------- |
-| `holyship-profile.jpg`     | Meridian 408 Holy Ship at anchor, profile view                      |
-| `holyship-flybridge.jpg`   | Flybridge of Holy Ship with polished stainless and detailed canvas  |
-| `holyship-hull-side.jpg`   | Detailed hull side of Holy Ship showing depth of gelcoat reflection |
-| `finish-mirror-gold.jpg`   | Sample of Mirror Gold cast acrylic finish under marina light        |
-| `finish-mirror-silver.jpg` | Sample of Mirror Silver cast acrylic finish under marina light      |
-| `finish-gloss-black.jpg`   | Sample of Gloss Black cast acrylic finish under marina light        |
-| `finish-gloss-white.jpg`   | Sample of Gloss White cast acrylic finish under marina light        |
-| `finish-frosted.jpg`       | Sample of Frosted cast acrylic finish under marina light            |
+**Acrylic finish swatches — STILL NEEDED (5), used in the homepage `#acrylic-finishes` library:**
 
-**Added from the owner's photos:** `holyship-hero.jpg` (hero — chrome name at sunset),
-`holyship-gallery1.jpg` (gallery feature + slider "after"), `holyship-before.jpg` (slider "before" —
-the old navy flat-vinyl name), `holyship-hull-side.jpg`, `holyship-408-badge.jpg`. The before/after
-slider now runs on real photos (flat vinyl → cast acrylic). `holyship-profile.jpg` and
-`holyship-flybridge.jpg` are present but no longer referenced by the page.
+| File (`public/images/…`)   | Alt text                                                       |
+| -------------------------- | -------------------------------------------------------------- |
+| `finish-mirror-gold.jpg`   | Sample of Mirror Gold cast acrylic finish under marina light   |
+| `finish-mirror-silver.jpg` | Sample of Mirror Silver cast acrylic finish under marina light |
+| `finish-gloss-black.jpg`   | Sample of Gloss Black cast acrylic finish under marina light   |
+| `finish-gloss-white.jpg`   | Sample of Gloss White cast acrylic finish under marina light   |
+| `finish-frosted.jpg`       | Sample of Frosted cast acrylic finish under marina light       |
 
-**Still needed:** the five `finish-*.jpg` swatches (or restructure that section to not require them).
-Already present: `transom-hero.jpg`, `transom-preview-base.jpg`, `favicon.png`.
+**New slots the rebrand introduces (not yet wired — need a shoot + a small build):**
+
+- **Vinyl finish gallery** — the previewer renders vinyl swatches in CSS (no photos
+  needed there), but there is no homepage vinyl finish gallery yet. If added, shoot
+  `finish-vinyl-white/black/navy/red/gold/silver.jpg` (alt: "Sample of {colour} cut
+  vinyl boat lettering").
+- **Install-tier photos** — `/install` is currently text-only. Shoot an A1 crew
+  templating and installing at a marina: `install-template.jpg` (alt: "A1 Marine
+  Care templating a transom at the dock"), `install-crew.jpg` (alt: "A1 Marine Care
+  crew installing cast acrylic boat lettering at a marina"). Then place them on
+  `src/routes/install.tsx`.
+- **Branded OG image (recommended)** — the homepage OG currently reuses
+  `holyship-hero.jpg` (the case-study boat). A product-led `og-boatnames.jpg`
+  (1200×630) would be a stronger social card for a national brand; set it as
+  `OG_IMAGE` in `src/routes/index.tsx`.
+
+**Present but unreferenced:** `holyship-profile.jpg`, `holyship-flybridge.jpg` (safe
+to delete). **Present + in use:** `transom-preview-base.jpg` (previewer base),
+`favicon.png`.
 
 ## 4. Supabase (the leads backend)
 
 1. Create/choose a Supabase project.
-2. Apply `supabase/migrations/20260725000000_holyship_quote_backend.sql` (Supabase CLI `supabase db push`, or paste into the SQL editor). It creates the tables, the enums, and the **private** `quote-photos` bucket.
-3. Confirm the `quote-photos` bucket exists and is private.
+2. Apply the migrations in order (`supabase db push`, or paste into the SQL editor):
+   - `20260725000000_holyship_quote_backend.sql` — tables, enums, private `quote-photos` bucket.
+   - `20260727000000_boatnames_tier_fields.sql` — `product_line` + `fulfillment` columns.
+   - `20260727000100_outbox_superseded_status.sql` — adds the `superseded` outbox status.
+   - `20260727000200_supersede_holyship_outbox.sql` — retires any stale holyship-shaped outbox rows.
+3. Confirm the `quote-photos` bucket exists and is **private**.
 
 ## 5. Environment variables (see `.env.example`)
 
 Server-only (NEVER `VITE_`-prefixed): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
-`RESEND_API_KEY`, `LEAD_FROM_EMAIL` (Resend-verified domain), `LEAD_NOTIFY_EMAIL`.
-Public: `VITE_SITE_URL` = the production origin.
+`RESEND_API_KEY`, `LEAD_FROM_EMAIL` + `LEAD_NOTIFY_EMAIL` (default to `@boatnames.ca`).
+Public: `VITE_SITE_URL` = the production origin (defaults to `https://boatnames.ca`).
+
+- **Resend must verify the `boatnames.ca` domain** before `LEAD_FROM_EMAIL` can send.
 
 ## 6. Deploy (Railway)
 
 - Build: `bun run build` → Nitro node-server output in `.output/`.
 - Start: `node .output/server/index.mjs` (Railway provides `PORT`).
 - After deploy, hit `GET /api/health` — expect `{"ok":true,"db":"ok"}`.
-- Submit a real test quote and confirm: a `quote_requests` row, a `skipped_gated`
-  `empirevu_outbox` row with a schema-valid envelope, and the notification email.
+- Submit a real test quote (once) per tier — a ship-tier vinyl and an install-tier
+  acrylic — and confirm each writes a `quote_requests` row with the correct
+  `product_line` + `fulfillment`, a `skipped_gated` `empirevu_outbox` row with a
+  schema-valid envelope under `sourceSite: boatnames`, and the notification email.
 
 ## 7. EmpireVu forward — stays OFF until you flip it
 
@@ -84,7 +117,8 @@ default. To enable, in order:
    `a1-coatings`), and map `sourceSite: boatnames` to it. **Sequencing matters** — the intake
    resolves the company from `sourceSite` at lead time, so a lead arriving before the seed lands
    in `raw_leads` instead of matching a contact. Keep the gate OFF until the seed is confirmed.
-   (This repo can't reach EmpireVu — the seed SQL is produced separately; see the handoff.)
+   Starting point: `docs/empirevu-seed-a1-boatnames.sql` (a template — reconcile table/column
+   names against EmpireVu's real schema first; this repo can't reach it).
 2. **Sync the fixtures (cross-repo):** add
    `src/server/__fixtures__/lead-envelopes/boatnames-ship-acrylic.json` and
    `boatnames-install-vinyl.json` to EmpireVu's intake fixtures and confirm they validate there.
@@ -97,7 +131,14 @@ default. To enable, in order:
 ## 8. Pre-launch QA (needs a deployed/preview build)
 
 - Lighthouse mobile: performance ≥ 90, accessibility ≥ 95.
-- Keyboard-only pass through the previewer (font/finish radiogroups, size slider)
-  and the quote form — visible focus throughout, no traps.
-- `?calibrate=1` on the previewer to fine-tune the lettering panel against the
-  real photo if needed (`PANEL` in `src/components/site/TransomPreviewer.tsx`).
+- **Previewer-as-hero on mobile**: confirm the live preview canvas is usable at first
+  paint; consider a controls-first reflow if the font/finish/size controls feel too
+  far below the fold.
+- **Vinyl/acrylic toggle**: renders visibly flat (vinyl) vs dimensional (acrylic), and
+  the design (incl. product line) round-trips through the share URL.
+- Keyboard-only pass through the previewer (product-line/font/finish radiogroups, size
+  slider) and the quote form — visible focus throughout, no traps.
+- Quote form: the install tier requires a marina and shows the service-area note; the
+  ship tier leads with the transom photo.
+- `?calibrate=1` on the previewer to fine-tune the lettering panel against the real
+  photo if needed (`PANEL` in `src/components/site/TransomPreviewer.tsx`).

@@ -198,7 +198,7 @@ export function QuoteForm({ prefill, defaultFulfillment = "ship" }: Props) {
       <Input
         name="boat_model"
         label="Boat make and model"
-        placeholder="e.g. Meridian 408"
+        placeholder="e.g. Sea Ray 320"
         error={fieldErrors.boat_model}
       />
 
@@ -377,7 +377,7 @@ export function QuoteForm({ prefill, defaultFulfillment = "ship" }: Props) {
 
       <div className="mt-2 flex flex-col gap-3 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="max-w-md text-xs text-[color:var(--wake)]">
-          We reply within one business day with a proof and a price. No newsletters.
+          We reply within one business day with a proof and a price in CAD. No newsletters.
         </p>
         <button
           type="submit"

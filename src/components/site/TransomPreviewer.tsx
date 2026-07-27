@@ -414,7 +414,7 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
               maxLength={18}
               onChange={(e) => onChange({ ...config, name: e.target.value.slice(0, 18) })}
               className="w-full rounded-sm border border-[color:var(--wake)]/25 bg-[color:var(--hull)] px-3 py-2 text-[color:var(--gelcoat)] outline-none transition focus:border-[color:var(--polish)]"
-              placeholder="Holy Ship"
+              placeholder="Your boat name"
             />
             <Hint>{config.name.length}/18</Hint>
           </Field>
@@ -425,7 +425,7 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
               maxLength={24}
               onChange={(e) => onChange({ ...config, port: e.target.value.slice(0, 24) })}
               className="w-full rounded-sm border border-[color:var(--wake)]/25 bg-[color:var(--hull)] px-3 py-2 text-[color:var(--gelcoat)] outline-none transition focus:border-[color:var(--polish)]"
-              placeholder="Midland, ON"
+              placeholder="City, Province"
             />
             <Hint>optional</Hint>
           </Field>

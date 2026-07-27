@@ -266,7 +266,7 @@ function buildLeadEmail(
   const present = rows.filter(([, value]) => value != null && value !== "");
 
   const text = present.map(([k, value]) => `${k}: ${value}`).join("\n");
-  const html = `<h2>New Holy Ship quote</h2><table cellpadding="6" style="border-collapse:collapse">${present
+  const html = `<h2>New boatnames.ca quote</h2><table cellpadding="6" style="border-collapse:collapse">${present
     .map(
       ([k, value]) =>
         `<tr><td style="font-weight:600;vertical-align:top">${esc(k)}</td><td>${esc(String(value))}</td></tr>`,
