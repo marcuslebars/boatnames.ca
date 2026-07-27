@@ -39,6 +39,27 @@ export const Route = createFileRoute("/install")({
       { name: "twitter:description", content: DESCRIPTION },
     ],
     links: [{ rel: "canonical", href: CANONICAL }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "LocalBusiness",
+          name: "boatnames.ca — installed by A1 Marine Care",
+          url: CANONICAL,
+          // TODO(NAP): placeholder — replace with A1 Marine Care's real phone/address before launch.
+          telephone: "+1-705-000-0000",
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: "Midland",
+            addressRegion: "ON",
+            addressCountry: "CA",
+          },
+          areaServed: SERVICE_AREA,
+          parentOrganization: { "@type": "Organization", name: "A1 Marine Care" },
+        }),
+      },
+    ],
   }),
 });
 

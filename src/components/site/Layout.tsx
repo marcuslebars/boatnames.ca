@@ -63,6 +63,12 @@ export function SiteFooter() {
           <p className="mt-6 font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
             AN A1 COMPANY · PRICES IN CAD · SHIPPING CANADA-WIDE
           </p>
+          <Link
+            to="/names"
+            className="mt-4 inline-block font-mono text-[10px] tracking-widest text-[color:var(--polish)] transition hover:underline"
+          >
+            BOAT NAME IDEAS →
+          </Link>
         </div>
         <div>
           <h4 className="font-mono text-[10px] tracking-widest text-[color:var(--wake)]">

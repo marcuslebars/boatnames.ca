@@ -59,17 +59,56 @@ export const Route = createFileRoute("/")({
       { name: "twitter:image", content: OG_IMAGE },
     ],
     links: [{ rel: "canonical", href: CANONICAL }],
-    // Lean Organization node for now; Phase 6 expands this with Product entries
-    // (vinyl + acrylic) and moves LocalBusiness to /install.
     scripts: [
       {
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
-          "@type": "Organization",
-          name: "boatnames.ca",
-          url: CANONICAL,
-          parentOrganization: { "@type": "Organization", name: "A1 Marine Care" },
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": `${SITE_URL}/#org`,
+              name: "boatnames.ca",
+              url: CANONICAL,
+              areaServed: "CA",
+              parentOrganization: {
+                "@type": "Organization",
+                name: "A1 Marine Care",
+                url: "https://a1marinecare.ca",
+              },
+              sameAs: ["https://a1marinecare.ca", "https://a1marinestorage.ca"],
+            },
+            {
+              "@type": "Product",
+              name: "Cast Acrylic Boat Name Lettering",
+              description:
+                'Dimensional laser-cut cast acrylic boat name lettering, 1/4" thick and 10+ year colour-stable, in mirror gold, mirror silver, gloss, and frosted finishes.',
+              category: "Boat name lettering",
+              brand: { "@type": "Brand", name: "boatnames.ca" },
+              offers: {
+                "@type": "Offer",
+                areaServed: "CA",
+                priceCurrency: "CAD",
+                availability: "https://schema.org/MadeToOrder",
+                url: CANONICAL,
+              },
+            },
+            {
+              "@type": "Product",
+              name: "Cut Vinyl Boat Name Lettering",
+              description:
+                "Cut vinyl boat name lettering and decals in solid colours and printed metallics — the value tier, shipped anywhere in Canada.",
+              category: "Boat name lettering",
+              brand: { "@type": "Brand", name: "boatnames.ca" },
+              offers: {
+                "@type": "Offer",
+                areaServed: "CA",
+                priceCurrency: "CAD",
+                availability: "https://schema.org/MadeToOrder",
+                url: CANONICAL,
+              },
+            },
+          ],
         }),
       },
     ],
@@ -173,6 +212,10 @@ function Index() {
               See it on the transom before you buy.
             </span>
           </h1>
+          <p className="mt-4 max-w-2xl text-[color:var(--gelcoat)]/70">
+            Custom boat name lettering in cut vinyl or dimensional cast acrylic — designed online,
+            shipped across Canada, or installed locally.
+          </p>
 
           <div className="mt-10">
             <TransomPreviewer
@@ -221,8 +264,8 @@ function Index() {
               Cut Vinyl
             </h3>
             <p className="mt-3 text-[color:var(--gelcoat)]/75">
-              Solid colours and printed metallics, cut to your name. The value way to letter a boat
-              — clean, quick, and shippable anywhere.
+              Solid colours and printed metallics, cut to your name — boat lettering and decals. The
+              value tier: clean, quick, and shippable anywhere in Canada.
             </p>
             <ul className="mt-6 space-y-2 font-mono text-[11px] tracking-widest text-[color:var(--wake)]">
               <li>3–5 YEAR LIFESPAN</li>
@@ -278,9 +321,9 @@ function Index() {
 
         {/* Comparison — reframed as a ladder, not a takedown */}
         <p className="mt-12 max-w-2xl text-[color:var(--gelcoat)]/80">
-          Both letter your boat, and both start in the previewer above. Cast acrylic is the premium
-          upgrade; vinyl is the value tier. Here's how they compare so you can pick what's right for
-          your boat.
+          Both are custom boat name lettering, and both start in the previewer above. Cast acrylic
+          is the premium upgrade; vinyl is the value tier. Here's how they compare so you can pick
+          what's right for your boat.
         </p>
         <div className="mt-8 overflow-x-auto">
           <table className="w-full min-w-[560px] border-collapse font-sans text-sm">
