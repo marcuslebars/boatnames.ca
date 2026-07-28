@@ -112,16 +112,19 @@ org (NOT a service line of a1-marine-care). Envelope: `sourceSite: boatnames`, `
 boatnames_quote_ship | _install | _unsure`, `formType: quote`. The forward is gated off by
 default. To enable, in order:
 
-1. **Seed the company (cross-repo, EmpireVu):** create the `a1-boatnames` company under
-   `a1-group`, matching the sibling slug convention (`a1-marine-care` / `a1-marine-storage` /
-   `a1-coatings`), and map `sourceSite: boatnames` to it. **Sequencing matters** — the intake
-   resolves the company from `sourceSite` at lead time, so a lead arriving before the seed lands
-   in `raw_leads` instead of matching a contact. Keep the gate OFF until the seed is confirmed.
-   Starting point: `docs/empirevu-seed-a1-boatnames.sql` (a template — reconcile table/column
-   names against EmpireVu's real schema first; this repo can't reach it).
-2. **Sync the fixtures (cross-repo):** add
-   `src/server/__fixtures__/lead-envelopes/boatnames-ship-acrylic.json` and
-   `boatnames-install-vinyl.json` to EmpireVu's intake fixtures and confirm they validate there.
+   **The EmpireVu-side work is already done — on an unmerged branch.** In syncoree,
+   branch `feat/boatnames-company-intake` (commit `75850c4`) contains: the `sourceSite ->
+   company` routing map (`src/server/services/lead-intake/routing.ts`,
+   `SOURCE_SITE_TO_COMPANY_SLUG["boatnames"] = "a1-boatnames"` — a CODE map, not a DB column),
+   the seed `supabase/seeds/a1-boatnames.sql`, the intake fixtures, and tests. So:
+
+1. **Merge + deploy EmpireVu:** merge `feat/boatnames-company-intake` -> main and deploy — this
+   ships the routing map (which resolves `sourceSite: boatnames` -> company `a1-boatnames`) and
+   the intake fixtures. Without the deployed code map, leads resolve to no company -> `raw_leads`.
+2. **Run the seed** `syncoree/supabase/seeds/a1-boatnames.sql` against the live EmpireVu DB
+   (creates the company row under `a1-group`, which already exists — the live A1 siblings are under
+   it). **Sequencing:** deploy + seed BEFORE flipping the gate, or leads land in `raw_leads`.
+   (`docs/empirevu-seed-a1-boatnames.sql` here is a reference copy of that seed.)
 3. Set `EMPIREVU_INTAKE_URL` + `EMPIREVU_INTAKE_SECRET`; remove `EMPIREVU_INTAKE_DISABLED=1`.
 4. Replay the accumulated envelopes: `bun scripts/replay-outbox.ts skipped_gated` — diff a batch
    against the fixtures first; each should resolve to a CRM contact, not `raw_leads`. Rows written
