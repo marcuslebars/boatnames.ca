@@ -47,7 +47,10 @@ Each `ImgSlot` renders a labelled placeholder tile until the real file exists.
 | `holyship-hull-side.jpg` | case-study gallery                                          |
 | `holyship-408-badge.jpg` | case-study gallery                                          |
 
-**Acrylic finish swatches — STILL NEEDED (5), used in the homepage `#acrylic-finishes` library:**
+**Acrylic finish swatches — PRESENT as generated stand-ins (5), used in the homepage
+`#acrylic-finishes` library.** These are rendered swatch tiles (a dimensional cast-acrylic
+plaque on a studio-dark ground), good enough to ship — replace with real product
+photography when available:
 
 | File (`public/images/…`)   | Alt text                                                       |
 | -------------------------- | -------------------------------------------------------------- |
