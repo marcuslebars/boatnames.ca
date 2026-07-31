@@ -23,15 +23,14 @@ Lovable build and is flagged with `TODO(content)` — **confirm or correct befor
 against the real hull: LOA `42' 8"`, BEAM `13' 10"`, POWER `TWIN INBOARD`, HULL
 COLOUR `GELCOAT WHITE`.
 
-## 2. Real NAP (name / address / phone) — flagged `TODO(NAP)`
+## 2. Real NAP (name / address / phone)
 
-- **Phone** `+1-705-000-0000` — placeholder in the `/install` LocalBusiness JSON-LD
-  (`src/routes/install.tsx`) and the footer `tel:` link + display text
-  (`src/components/site/Layout.tsx`). Replace with A1 Marine Care's real number.
-- **Email** `hello@boatnames.ca` — footer + quote error copy assume this inbox exists.
-  Confirm it's live (or repoint).
+- **Phone** — ✅ set to `(705) 996-2001` / `+1-705-996-2001` in the footer
+  (`src/components/site/Layout.tsx`) and the `/install` LocalBusiness JSON-LD
+  (`src/routes/install.tsx`).
+- **Email** — ✅ `hello@boatnames.ca` (owner-confirmed live); footer + quote error copy.
 - **Address** — only `Midland, ON` locality is set (install LocalBusiness). Add a
-  street address if you want it in the schema.
+  street address if you want it in the schema. **(still TODO)**
 
 ## 3. Photography — shoot list for the boatnames structure
 

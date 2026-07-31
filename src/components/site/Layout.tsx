@@ -77,16 +77,14 @@ export function SiteFooter() {
             CONTACT
           </h4>
           <ul className="mt-3 space-y-2 text-sm">
-            {/* TODO(NAP): confirm hello@boatnames.ca is a live inbox before launch. */}
             <li>
               <a href="mailto:hello@boatnames.ca" className="hover:text-[color:var(--polish)]">
                 hello@boatnames.ca
               </a>
             </li>
-            {/* TODO(NAP): placeholder — replace with the real phone before launch. */}
             <li>
-              <a href="tel:+17050000000" className="hover:text-[color:var(--polish)]">
-                (705) 000-0000
+              <a href="tel:+17059962001" className="hover:text-[color:var(--polish)]">
+                (705) 996-2001
               </a>
             </li>
             <li className="text-[color:var(--wake)]">Ships Canada-wide · Install in Ontario</li>

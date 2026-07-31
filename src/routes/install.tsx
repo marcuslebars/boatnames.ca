@@ -47,8 +47,8 @@ export const Route = createFileRoute("/install")({
           "@type": "LocalBusiness",
           name: "boatnames.ca — installed by A1 Marine Care",
           url: CANONICAL,
-          // TODO(NAP): placeholder — replace with A1 Marine Care's real phone/address before launch.
-          telephone: "+1-705-000-0000",
+          // TODO(NAP): add A1 Marine Care's street address before launch (phone is set).
+          telephone: "+1-705-996-2001",
           address: {
             "@type": "PostalAddress",
             addressLocality: "Midland",
