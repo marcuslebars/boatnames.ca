@@ -18,7 +18,7 @@ const TITLE = "Custom Boat Name Lettering — Vinyl & Acrylic | boatnames.ca";
 const DESCRIPTION =
   "Design your boat's name online and see it on the transom before you buy. Cut vinyl and dimensional cast acrylic boat name lettering and decals, shipped across Canada. An A1 company.";
 // Absolute URLs — social scrapers and canonical tags need the full origin.
-const OG_IMAGE = `${SITE_URL}/images/holyship-hero.jpg`;
+const OG_IMAGE = `${SITE_URL}/images/og-boatnames.jpg`;
 const CANONICAL = `${SITE_URL}/`;
 
 // Old single-page anchors whose sections moved to the case study. Deep links to
