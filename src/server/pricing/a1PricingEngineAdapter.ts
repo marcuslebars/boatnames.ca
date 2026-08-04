@@ -1,32 +1,44 @@
+import { priceDesign, type ProductLineKey } from "./engine";
+import { PRICING_VERSION } from "./rate-card";
 import type { PricingAdapter, PricingInput, PricingResult } from "./types";
 
 /**
- * STUB — typed shell only. No implementation, and NO dependency added in this
- * phase (the shared a1-pricing-engine package is not installed here).
+ * The boatnames.ca pricing engine plugged into the PricingAdapter socket.
  *
- * When the shared `@a1/pricing-engine` package is wired in (same git-dep rule as
- * the Care/Storage pricing work), this adapter maps its concepts onto the
- * PricingAdapter socket:
+ * Selected by PRICING_ADAPTER=engine. Maps the socket's PricingInput onto the
+ * pure engine (rate-card.ts + engine.ts) and back onto PricedResult. Tax is left
+ * "unresolved" — Stripe Tax computes GST/HST/PST at checkout. Shipping is not in
+ * the product subtotal (address-dependent; see engine.shippingCents).
  *
- *   a1-pricing-engine concept       ->  PricingAdapter here
- *   ------------------------------      -----------------------------------------
- *   product / SKU catalogue         ->  PricingInput.productLine + design.finish
- *   dimension inputs (size, run)    ->  design.letterHeightIn + design.runLengthIn
- *   fulfillment / shipping rates    ->  PricingInput.fulfillment + destinationProvince
- *   tax engine (GST / HST / PST)    ->  PricedResult.taxTreatment (placeholder now)
- *   computed quote / total          ->  PricedResult.lineItems + subtotalCents (cents)
- *
- * The engine's REAL interface type names could not be verified from this repo —
- * the package is not a dependency here, so the mapping above uses placeholder
- * concept names. Reconcile against the package's actual exports before
- * implementing (flagged in the phase summary).
- *
- * Until implemented it returns `unpriced`, so setting PRICING_ADAPTER=engine can
- * never crash or invent a price. (.env.example says do not set it this phase.)
+ * The engine + rate card are structured to lift into the shared a1-pricing-engine
+ * package unchanged; this adapter is the only boatnames-specific glue.
  */
 export const a1PricingEngineAdapter: PricingAdapter = {
   name: "a1-pricing-engine",
-  price(_input: PricingInput): PricingResult {
-    return { status: "unpriced", reason: "a1-pricing-engine adapter not implemented (stub)" };
+  price(input: PricingInput): PricingResult {
+    const line: ProductLineKey | null =
+      input.productLine === "acrylic" ? "acrylic" : input.productLine === "vinyl" ? "vinyl" : null;
+    if (!line) {
+      return { status: "unpriced", reason: `Unknown product line "${String(input.productLine)}".` };
+    }
+
+    const result = priceDesign({
+      line,
+      name: input.design.boatName ?? "",
+      finish: input.design.finish ?? "",
+      heightIn: input.design.letterHeightIn ?? 0,
+      hasPort: Boolean(input.design.hailingPort && input.design.hailingPort.trim()),
+    });
+
+    if (result.status === "unpriced") return result;
+
+    return {
+      status: "priced",
+      currency: result.currency,
+      lineItems: result.lines,
+      subtotalCents: result.subtotalCents,
+      taxTreatment: "unresolved",
+      pricingVersion: PRICING_VERSION,
+    };
   },
 };

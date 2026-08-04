@@ -34,8 +34,10 @@ export interface PricedResult {
   status: "priced";
   currency: string; // e.g. "CAD"
   lineItems: PricingLineItem[];
-  subtotalCents: number;
-  taxTreatment: "unresolved"; // placeholder — real engine resolves GST/HST/PST
+  subtotalCents: number; // after all premiums, before shipping
+  taxTreatment: "unresolved"; // Stripe Tax resolves GST/HST/PST at checkout
+  /** Rate-card version that produced this price, so every order traces to its rates. */
+  pricingVersion?: string;
 }
 
 /** No price — the caller leaves amounts null and records that pricing was manual. */
