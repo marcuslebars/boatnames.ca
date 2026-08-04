@@ -15,17 +15,26 @@ type Props = {
  */
 export function ImgSlot({ src, alt, ratio = "4/3", className = "", eager }: Props) {
   const [failed, setFailed] = useState(false);
+  // Every raster in public/images/ ships alongside .avif + .webp siblings (see
+  // the WebP/AVIF sweep). Modern browsers take the smaller format; the <img>'s
+  // original src is the fallback. NOTE: a new .jpg/.png added here MUST get its
+  // .avif + .webp generated too, or the chosen source 404s -> onError placeholder.
+  const base = /\.(jpe?g|png)$/i.test(src) ? src.replace(/\.(jpe?g|png)$/i, "") : null;
   return (
     <div className={`relative overflow-hidden ${className}`} style={{ aspectRatio: ratio }}>
       {!failed ? (
-        <img
-          src={src}
-          alt={alt}
-          loading={eager ? "eager" : "lazy"}
-          decoding="async"
-          onError={() => setFailed(true)}
-          className="h-full w-full object-cover"
-        />
+        <picture>
+          {base && <source srcSet={`${base}.avif`} type="image/avif" />}
+          {base && <source srcSet={`${base}.webp`} type="image/webp" />}
+          <img
+            src={src}
+            alt={alt}
+            loading={eager ? "eager" : "lazy"}
+            decoding="async"
+            onError={() => setFailed(true)}
+            className="h-full w-full object-cover"
+          />
+        </picture>
       ) : (
         <div className="placeholder-slot absolute inset-0">
           <div className="max-w-[80%]">
