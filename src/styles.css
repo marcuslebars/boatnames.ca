@@ -66,7 +66,7 @@
 :root {
   --hull: #141a20;
   --gelcoat: #f2f4f3;
-  --polish: #c9a24b; /* luxury gold accent */
+  --polish: #C9A227; /* brand gold — exact match to the logo gradient (brushedGold mid-stop) */
   --bay: #2e5a63;
   --wake: #8c969b;
   --radius: 0.625rem;

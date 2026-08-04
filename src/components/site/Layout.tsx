@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { type ReactNode } from "react";
 
+import { BoatnamesLogo } from "./BoatnamesLogo";
+
 // Cross-page nav. Homepage sections use `to:"/" hash:...` so they resolve from
 // any page. A1 stays out of the masthead by design — it lives in the footer.
 const NAV = [
@@ -15,11 +17,7 @@ export function SiteHeader() {
     <header className="fixed inset-x-0 top-0 z-30 border-b border-[color:var(--wake)]/10 bg-[color:var(--hull)]/70 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3 lg:px-10">
         <Link to="/" className="flex items-center" aria-label="boatnames.ca — home">
-          <img
-            src="/images/boatnames-logo.svg"
-            alt="boatnames.ca — An A1 Company"
-            className="h-6 w-auto sm:h-7"
-          />
+          <BoatnamesLogo className="h-6 sm:h-7" />
         </Link>
         <nav className="hidden items-center gap-6 font-sans text-[11px] tracking-widest text-[color:var(--wake)] md:flex">
           {NAV.map((item) => (
@@ -51,11 +49,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 py-16 lg:grid-cols-4 lg:px-10">
         <div className="lg:col-span-2">
           <div className="flex items-center">
-            <img
-              src="/images/boatnames-logo.svg"
-              alt="boatnames.ca — An A1 Company"
-              className="h-8 w-auto"
-            />
+            <BoatnamesLogo className="h-9" taglineClassName="hidden" />
           </div>
           <p className="mt-4 max-w-md text-sm text-[color:var(--gelcoat)]/70">
             Custom boat name lettering — cut vinyl and dimensional cast acrylic — designed online

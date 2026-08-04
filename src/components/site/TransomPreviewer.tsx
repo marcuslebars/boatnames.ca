@@ -227,7 +227,7 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
       ctx.textBaseline = "middle";
       ctx.textAlign = "left";
       ctx.font = `600 ${brandFont}px "JetBrains Mono", ui-monospace, monospace`;
-      ctx.fillStyle = "#c9a24b"; // mirrors --polish (luxury gold accent)
+      ctx.fillStyle = "#C9A227"; // mirrors --polish (brand gold = logo gradient mid-stop)
       ctx.fillText("boatnames.ca", W * 0.03, midY);
       const brandW = ctx.measureText("boatnames.ca").width;
 
