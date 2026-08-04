@@ -126,6 +126,10 @@ function Index() {
   });
   const navigate = Route.useNavigate();
 
+  // Phase 2: the previewer composites a custom-photo proof and hands it up here
+  // so the quote form can attach it through its existing photo field.
+  const [proofPhoto, setProofPhoto] = useState<File | null>(null);
+
   // Redirect deep links to moved sections, then read a shared/bookmarked design
   // from the URL on mount.
   useEffect(() => {
@@ -222,6 +226,7 @@ function Index() {
               config={config}
               onChange={setConfig}
               onQuote={() => scrollTo("quote")}
+              onProof={setProofPhoto}
             />
           </div>
 
@@ -509,7 +514,7 @@ function Index() {
             </p>
           </div>
           <div className="reveal mt-12">
-            <QuoteForm prefill={config} />
+            <QuoteForm prefill={config} proofPhoto={proofPhoto} />
           </div>
         </div>
       </section>

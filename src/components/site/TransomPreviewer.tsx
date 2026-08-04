@@ -10,15 +10,32 @@ import {
   type PreviewConfig,
   type ProductLine,
 } from "./previewer-types";
+import { loadTransomPhoto, ACCEPTED_TYPES, type LoadedPhoto } from "./image-intake";
+import {
+  CustomPhotoStage,
+  DEFAULT_PLACEMENT,
+  SCALE_MIN,
+  SCALE_MAX,
+  type Placement,
+} from "./CustomPhotoStage";
 
 type Props = {
   config: PreviewConfig;
   onChange: (next: PreviewConfig) => void;
   onQuote: () => void;
+  // Phase 2: hand the composited proof (customer photo + lettering) up so the
+  // quote form can attach it through the EXISTING photo field. Passed null on
+  // the stock transom — there the visitor uploads their own raw photo instead.
+  onProof?: (file: File | null) => void;
 };
 
 const BASE_IMG = "/images/transom-preview-base.jpg";
 const PORT_FONT = '"Big Shoulders Display", sans-serif';
+
+// Custom-photo lettering size at scale=1, as a fraction of the stage width.
+// Applied identically to the on-screen stage and the full-res composite so the
+// two match exactly regardless of the photo's pixel dimensions.
+const BASE_FONT_FRAC = 0.11;
 
 // Calibration of the lettering panel within transom-preview-base.jpg. x/y/width/
 // height are fractions of the image; the rectangle is where cast acrylic letters
@@ -73,6 +90,94 @@ function finishFill(
   return g;
 }
 
+/** Shared lettering — used by the stock panel overlay and the custom-photo
+ *  overlay so they render identically. Port sits under the name. */
+function Lettering({
+  text,
+  port,
+  fontCss,
+  fontWeight,
+  finishClass,
+  uppercase,
+  fontPx,
+  portPx,
+}: {
+  text: string;
+  port: string;
+  fontCss: string;
+  fontWeight: number;
+  finishClass: string;
+  uppercase: boolean;
+  fontPx: number;
+  portPx: number;
+}) {
+  return (
+    <>
+      <span
+        className={`${finishClass} block leading-[0.95]`}
+        style={{
+          fontFamily: fontCss,
+          fontWeight,
+          fontSize: `${fontPx}px`,
+          whiteSpace: "nowrap",
+          textTransform: uppercase ? "uppercase" : "none",
+        }}
+      >
+        {text}
+      </span>
+      {port && (
+        <span
+          className={`${finishClass} block leading-none tracking-[0.2em]`}
+          style={{
+            fontFamily: PORT_FONT,
+            fontWeight: 700,
+            fontSize: `${portPx}px`,
+            marginTop: `${portPx * 0.7}px`,
+            textTransform: "uppercase",
+          }}
+        >
+          {port}
+        </span>
+      )}
+    </>
+  );
+}
+
+/** Branded spec strip along the bottom of a proof — boatnames.ca + the design
+ *  summary. No price (pricing returns with the quote). Auto-shrinks the spec. */
+function drawSpecStrip(ctx: CanvasRenderingContext2D, W: number, H: number, spec: string) {
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+  const stripH = Math.max(H * 0.075, 42);
+  ctx.fillStyle = "rgba(10,13,16,0.85)";
+  ctx.fillRect(0, H - stripH, W, stripH);
+  const midY = H - stripH / 2;
+  const brandFont = Math.max(stripH * 0.32, 12);
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  ctx.font = `600 ${brandFont}px "JetBrains Mono", ui-monospace, monospace`;
+  ctx.fillStyle = "#C9A227"; // mirrors --polish (brand gold = logo gradient mid-stop)
+  ctx.fillText("boatnames.ca", W * 0.03, midY);
+  const brandW = ctx.measureText("boatnames.ca").width;
+
+  let specFont = brandFont;
+  const maxSpecW = W * 0.94 - brandW;
+  ctx.font = `400 ${specFont}px "JetBrains Mono", ui-monospace, monospace`;
+  while (specFont > 9 && ctx.measureText(spec).width > maxSpecW) {
+    specFont -= 1;
+    ctx.font = `400 ${specFont}px "JetBrains Mono", ui-monospace, monospace`;
+  }
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#e6e9ea";
+  ctx.fillText(spec, W * 0.97, midY);
+}
+
+function toBlob(canvas: HTMLCanvasElement): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+}
+
 function moveRadioFocus(el: HTMLElement, index: number) {
   const group = el.closest<HTMLElement>('[role="radiogroup"]');
   group?.querySelectorAll<HTMLElement>('[role="radio"]')[index]?.focus();
@@ -96,7 +201,7 @@ function radioKeydown<T extends string>(
   moveRadioFocus(e.currentTarget, ni);
 }
 
-export function TransomPreviewer({ config, onChange, onQuote }: Props) {
+export function TransomPreviewer({ config, onChange, onQuote, onProof }: Props) {
   const font = FONT_OPTIONS.find((f) => f.key === config.font) ?? FONT_OPTIONS[0];
   const finishes = finishOptionsFor(config.line);
   const finish = finishes.find((f) => f.key === config.finish) ?? finishes[0];
@@ -132,17 +237,26 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
     setCalibrate(new URLSearchParams(window.location.search).get("calibrate") === "1");
   }, []);
 
-  // Geometry derived from the calibration panel.
+  // ---- Phase 2: custom transom photo (memory-only) ----
+  const [photo, setPhoto] = useState<LoadedPhoto | null>(null);
+  const [placement, setPlacement] = useState<Placement>(DEFAULT_PLACEMENT);
+  const [photoError, setPhotoError] = useState("");
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const customMode = photo !== null;
+
+  // Geometry derived from the stock calibration panel (stock mode only).
   const pxPerInch = canvasWidth > 0 ? (PANEL.width * canvasWidth) / PANEL.realWidthIn : 0;
   const panelPx = PANEL.width * canvasWidth;
   const letterHeightPx = config.size * pxPerInch; // desired cap height on screen
   const naturalFontPx = ratio.cap > 0 ? letterHeightPx / ratio.cap : letterHeightPx;
   const naturalRunPx = ratio.width * naturalFontPx;
-  const runLengthIn = pxPerInch > 0 ? naturalRunPx / pxPerInch : 0;
+  // Run length is pure font metrics × requested height — it cancels px-per-inch,
+  // so it stays valid on a custom photo that has no calibration.
+  const runLengthIn = ratio.cap > 0 ? (ratio.width * config.size) / ratio.cap : 0;
 
-  // Never clip: scale the displayed lettering to fit the panel, and surface the
-  // real constraint instead (a sales conversation, per the brief).
-  const overflow = panelPx > 0 && naturalRunPx > panelPx;
+  // Never clip on the stock panel: scale the lettering to fit and surface the
+  // real constraint instead. A custom photo has no panel, so no overflow there.
+  const overflow = !customMode && panelPx > 0 && naturalRunPx > panelPx;
   const fitScale = overflow ? panelPx / naturalRunPx : 1;
   const displayFontPx = Math.max(naturalFontPx * fitScale, 6);
   const nameCapPx = displayFontPx * ratio.cap;
@@ -152,121 +266,220 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
   const constraintMsg = overflow
     ? `At ${config.size}" letters, "${displayName}" runs about ${Math.round(runLengthIn)}" — wider than this ~${PANEL.realWidthIn}" panel. Shown scaled to fit; a shorter name or smaller letters sit true to size.`
     : "";
-  const summary = `${displayName} in ${font.label}, ${finish.label} finish, ${config.size}-inch letters, about ${runLabel} long.${overflow ? " Exceeds the preview panel width." : ""}`;
+  const summary = customMode
+    ? `${displayName} in ${font.label}, ${finish.label} finish, placed on your transom photo. Requested ${config.size}-inch letters, about ${runLabel} long — on-screen size is for placement only.`
+    : `${displayName} in ${font.label}, ${finish.label} finish, ${config.size}-inch letters, about ${runLabel} long.${overflow ? " Exceeds the preview panel width." : ""}`;
+
+  // Custom-photo lettering sizes.
+  const baseFontPx = canvasWidth * BASE_FONT_FRAC;
+  const customPortPx = (px: number) => px * 0.28;
+  function renderLettering(px: number) {
+    return (
+      <Lettering
+        text={displayName}
+        port={config.port.trim()}
+        fontCss={font.css}
+        fontWeight={font.weight ?? 400}
+        finishClass={finish.textClass}
+        uppercase={uppercase}
+        fontPx={px}
+        portPx={customPortPx(px)}
+      />
+    );
+  }
+
+  async function onPhotoPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file later
+    if (!file) return;
+    setPhotoError("");
+    setPhotoBusy(true);
+    try {
+      const loaded = await loadTransomPhoto(file);
+      setPhoto(loaded);
+      setPlacement(DEFAULT_PLACEMENT);
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "We couldn't load that photo.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  function useStockTransom() {
+    setPhoto(null);
+    setPhotoError("");
+    onProof?.(null);
+  }
+
+  // ---- Proof composite (shared by the download button and the quote handoff) ----
+  async function renderCompositeBlob(): Promise<Blob | null> {
+    if (typeof document === "undefined") return null;
+    if (document.fonts?.ready) await document.fonts.ready;
+    const r = measureRatios(nameText, font.css, font.weight ?? 400);
+    const runIn = r.cap > 0 ? (r.width * config.size) / r.cap : 0;
+    const spec = [
+      displayName,
+      font.label,
+      finish.label,
+      `${config.size}"`,
+      runIn > 0 ? `~${Math.round(runIn)}" run` : "",
+      isAcrylic ? "CAST ACRYLIC" : "CUT VINYL",
+    ]
+      .filter(Boolean)
+      .join("  ·  ");
+
+    return photo ? renderCustomComposite(photo, r, spec) : renderStockComposite(r, spec);
+  }
+
+  async function renderStockComposite(r: Ratio, spec: string): Promise<Blob | null> {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = BASE_IMG;
+    await img.decode();
+
+    const W = img.naturalWidth || 1600;
+    const H = img.naturalHeight || 900;
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, W, H);
+
+    const panelW = PANEL.width * W;
+    const pxPerIn = panelW / PANEL.realWidthIn;
+    const letterPx = config.size * pxPerIn;
+    const natFont = r.cap > 0 ? letterPx / r.cap : letterPx;
+    const natRun = r.width * natFont;
+    const fit = natRun > panelW ? panelW / natRun : 1;
+    const fontPx = natFont * fit;
+    const cx = (PANEL.x + PANEL.width / 2) * W;
+    const cy = (PANEL.y + PANEL.height / 2) * H;
+    const capPx = fontPx * r.cap;
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    if (isAcrylic) {
+      ctx.shadowColor = "rgba(0,0,0,0.55)";
+      ctx.shadowBlur = Math.max(capPx * 0.05, 2);
+      ctx.shadowOffsetX = capPx * 0.03;
+      ctx.shadowOffsetY = capPx * 0.05;
+    }
+    const hasPort = config.port.trim().length > 0;
+    const portPx = Math.max(capPx * 0.32, 8);
+    const nameCy = hasPort ? cy - portPx * 0.7 : cy;
+    ctx.font = `${font.weight ?? 400} ${fontPx}px ${font.css}`;
+    ctx.fillStyle = finishFill(ctx, finish.key, nameCy, capPx);
+    ctx.fillText(nameText, cx, nameCy);
+    if (hasPort) {
+      const portCy = nameCy + capPx / 2 + portPx * 0.9;
+      ctx.font = `700 ${portPx}px ${PORT_FONT}`;
+      ctx.fillStyle = finishFill(ctx, finish.key, portCy, portPx);
+      ctx.fillText(config.port.trim().toUpperCase(), cx, portCy);
+    }
+    drawSpecStrip(ctx, W, H, spec);
+    return toBlob(canvas);
+  }
+
+  async function renderCustomComposite(
+    ph: LoadedPhoto,
+    r: Ratio,
+    spec: string,
+  ): Promise<Blob | null> {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = ph.url;
+    await img.decode();
+
+    const W = ph.width;
+    const H = ph.height;
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, W, H);
+
+    // Same fractions as the on-screen stage → the composite matches what they saw.
+    const fontPx = W * BASE_FONT_FRAC * placement.scale;
+    const capPx = fontPx * r.cap;
+    const portPx = customPortPx(fontPx);
+    const hasPort = config.port.trim().length > 0;
+
+    ctx.save();
+    ctx.translate(placement.cx * W, placement.cy * H);
+    ctx.rotate((placement.rot * Math.PI) / 180);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    if (isAcrylic) {
+      ctx.shadowColor = "rgba(0,0,0,0.55)";
+      ctx.shadowBlur = Math.max(capPx * 0.05, 2);
+      ctx.shadowOffsetX = capPx * 0.03;
+      ctx.shadowOffsetY = capPx * 0.05;
+    }
+    const nameCy = hasPort ? -portPx * 0.55 : 0;
+    ctx.font = `${font.weight ?? 400} ${fontPx}px ${font.css}`;
+    ctx.fillStyle = finishFill(ctx, finish.key, nameCy, capPx);
+    ctx.fillText(nameText, 0, nameCy);
+    if (hasPort) {
+      const portCy = nameCy + capPx / 2 + portPx * 0.9;
+      ctx.font = `700 ${portPx}px ${PORT_FONT}`;
+      ctx.fillStyle = finishFill(ctx, finish.key, portCy, portPx);
+      ctx.fillText(config.port.trim().toUpperCase(), 0, portCy);
+    }
+    ctx.restore();
+    drawSpecStrip(ctx, W, H, spec);
+    return toBlob(canvas);
+  }
+
+  function slugName() {
+    return (
+      config.name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") || "boat"
+    );
+  }
 
   const [saving, setSaving] = useState(false);
-  async function saveProof() {
-    if (typeof document === "undefined") return;
+  async function downloadProof() {
     setSaving(true);
     try {
-      const img = new Image();
-      img.decoding = "async";
-      img.src = BASE_IMG;
-      await img.decode();
-      if (document.fonts?.ready) await document.fonts.ready;
-
-      const W = img.naturalWidth || 1600;
-      const H = img.naturalHeight || 900;
-      const canvas = document.createElement("canvas");
-      canvas.width = W;
-      canvas.height = H;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0, W, H);
-
-      const panelW = PANEL.width * W;
-      const pxPerIn = panelW / PANEL.realWidthIn;
-      const letterPx = config.size * pxPerIn;
-      const r = measureRatios(nameText, font.css, font.weight ?? 400);
-      const natFont = r.cap > 0 ? letterPx / r.cap : letterPx;
-      const natRun = r.width * natFont;
-      const fit = natRun > panelW ? panelW / natRun : 1;
-      const fontPx = natFont * fit;
-      const cx = (PANEL.x + PANEL.width / 2) * W;
-      const cy = (PANEL.y + PANEL.height / 2) * H;
-      const capPx = fontPx * r.cap;
-
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      // Acrylic is dimensional (standoff shadow); vinyl is flat (no shadow).
-      if (isAcrylic) {
-        ctx.shadowColor = "rgba(0,0,0,0.55)";
-        ctx.shadowBlur = Math.max(capPx * 0.05, 2);
-        ctx.shadowOffsetX = capPx * 0.03;
-        ctx.shadowOffsetY = capPx * 0.05;
-      }
-
-      const hasPort = config.port.trim().length > 0;
-      const portPx = Math.max(capPx * 0.32, 8);
-      const nameCy = hasPort ? cy - portPx * 0.7 : cy;
-
-      ctx.font = `${font.weight ?? 400} ${fontPx}px ${font.css}`;
-      ctx.fillStyle = finishFill(ctx, finish.key, nameCy, capPx);
-      ctx.fillText(nameText, cx, nameCy);
-
-      if (hasPort) {
-        const portCy = nameCy + capPx / 2 + portPx * 0.9;
-        ctx.font = `700 ${portPx}px ${PORT_FONT}`;
-        ctx.fillStyle = finishFill(ctx, finish.key, portCy, portPx);
-        ctx.fillText(config.port.trim().toUpperCase(), cx, portCy);
-      }
-
-      // Branded spec strip along the bottom — boatnames.ca + the design summary
-      // (line, font, finish, size, computed run). No price is shown: pricing
-      // comes back with the quote and would route through @a1/pricing-engine if a
-      // model is added — run length is the input it would price on.
-      ctx.shadowColor = "transparent";
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
-      const stripH = Math.max(H * 0.075, 42);
-      ctx.fillStyle = "rgba(10,13,16,0.85)";
-      ctx.fillRect(0, H - stripH, W, stripH);
-      const midY = H - stripH / 2;
-      const brandFont = Math.max(stripH * 0.32, 12);
-      ctx.textBaseline = "middle";
-      ctx.textAlign = "left";
-      ctx.font = `600 ${brandFont}px "JetBrains Mono", ui-monospace, monospace`;
-      ctx.fillStyle = "#C9A227"; // mirrors --polish (brand gold = logo gradient mid-stop)
-      ctx.fillText("boatnames.ca", W * 0.03, midY);
-      const brandW = ctx.measureText("boatnames.ca").width;
-
-      const spec = [
-        displayName,
-        font.label,
-        finish.label,
-        `${config.size}"`,
-        runLengthIn > 0 ? `~${Math.round(runLengthIn)}" run` : "",
-        isAcrylic ? "CAST ACRYLIC" : "CUT VINYL",
-      ]
-        .filter(Boolean)
-        .join("  ·  ");
-      let specFont = brandFont;
-      const maxSpecW = W * 0.94 - brandW;
-      ctx.font = `400 ${specFont}px "JetBrains Mono", ui-monospace, monospace`;
-      while (specFont > 9 && ctx.measureText(spec).width > maxSpecW) {
-        specFont -= 1;
-        ctx.font = `400 ${specFont}px "JetBrains Mono", ui-monospace, monospace`;
-      }
-      ctx.textAlign = "right";
-      ctx.fillStyle = "#e6e9ea";
-      ctx.fillText(spec, W * 0.97, midY);
-
-      const slug =
-        config.name
-          .trim()
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "") || "boat";
+      const blob = await renderCompositeBlob();
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.download = `proof-${slug}.png`;
-      link.href = canvas.toDataURL("image/png");
+      link.download = `proof-${slugName()}.png`;
+      link.href = url;
       link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err) {
       console.error("Proof render failed", err);
     } finally {
       setSaving(false);
     }
+  }
+
+  const [preparing, setPreparing] = useState(false);
+  async function handleQuote() {
+    // On a custom photo, composite it now and hand it to the quote form through
+    // the existing photo field. On the stock transom there's nothing of theirs
+    // to attach — they upload their own raw photo in the form.
+    if (customMode && onProof) {
+      setPreparing(true);
+      try {
+        const blob = await renderCompositeBlob();
+        if (blob) onProof(new File([blob], `proof-${slugName()}.png`, { type: "image/png" }));
+      } catch (err) {
+        console.error("Composite for quote failed", err);
+      } finally {
+        setPreparing(false);
+      }
+    } else {
+      onProof?.(null);
+    }
+    onQuote();
   }
 
   return (
@@ -277,54 +490,27 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
           ref={canvasRef}
           className="relative overflow-hidden rounded-sm border border-[color:var(--wake)]/15 bg-black"
         >
-          <div className="relative">
-            <ImgSlot
-              src={BASE_IMG}
-              alt="Blank dark motoryacht transom used as the acrylic lettering preview base"
-              ratio="16/9"
-              eager
+          {customMode && photo ? (
+            <CustomPhotoStage
+              photoUrl={photo.url}
+              photoRatio={photo.width / photo.height}
+              placement={placement}
+              onPlacement={(fn) => setPlacement((p) => fn(p))}
+              baseFontPx={baseFontPx}
+              renderLettering={renderLettering}
             />
-            {/* Lettering anchored to the calibrated transom panel */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute flex flex-col items-center justify-center overflow-visible text-center"
-              style={{
-                left: `${PANEL.x * 100}%`,
-                top: `${PANEL.y * 100}%`,
-                width: `${PANEL.width * 100}%`,
-                height: `${PANEL.height * 100}%`,
-              }}
-            >
-              <span
-                className={`${finish.textClass} block leading-[0.95]`}
-                style={{
-                  fontFamily: font.css,
-                  fontWeight: font.weight,
-                  fontSize: `${displayFontPx}px`,
-                  whiteSpace: "nowrap",
-                  textTransform: uppercase ? "uppercase" : "none",
-                }}
-              >
-                {displayName}
-              </span>
-              {config.port.trim() && (
-                <span
-                  className={`${finish.textClass} block leading-none tracking-[0.2em]`}
-                  style={{
-                    fontFamily: PORT_FONT,
-                    fontWeight: 700,
-                    fontSize: `${portFontPx}px`,
-                    marginTop: `${portFontPx * 0.7}px`,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {config.port.trim()}
-                </span>
-              )}
-            </div>
-            {calibrate && (
+          ) : (
+            <div className="relative">
+              <ImgSlot
+                src={BASE_IMG}
+                alt="Blank dark motoryacht transom used as the acrylic lettering preview base"
+                ratio="16/9"
+                eager
+              />
+              {/* Lettering anchored to the calibrated transom panel */}
               <div
-                className="pointer-events-none absolute border-2 border-dashed border-[color:var(--polish)]"
+                aria-hidden
+                className="pointer-events-none absolute flex flex-col items-center justify-center overflow-visible text-center"
                 style={{
                   left: `${PANEL.x * 100}%`,
                   top: `${PANEL.y * 100}%`,
@@ -332,14 +518,39 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
                   height: `${PANEL.height * 100}%`,
                 }}
               >
-                <span className="absolute -top-5 left-0 whitespace-nowrap bg-black/70 px-1 font-mono text-[9px] text-[color:var(--polish)]">
-                  panel x{PANEL.x} y{PANEL.y} w{PANEL.width} h{PANEL.height} · {PANEL.realWidthIn}"
-                </span>
+                <Lettering
+                  text={displayName}
+                  port={config.port.trim()}
+                  fontCss={font.css}
+                  fontWeight={font.weight ?? 400}
+                  finishClass={finish.textClass}
+                  uppercase={uppercase}
+                  fontPx={displayFontPx}
+                  portPx={portFontPx}
+                />
               </div>
-            )}
-          </div>
+              {calibrate && (
+                <div
+                  className="pointer-events-none absolute border-2 border-dashed border-[color:var(--polish)]"
+                  style={{
+                    left: `${PANEL.x * 100}%`,
+                    top: `${PANEL.y * 100}%`,
+                    width: `${PANEL.width * 100}%`,
+                    height: `${PANEL.height * 100}%`,
+                  }}
+                >
+                  <span className="absolute -top-5 left-0 whitespace-nowrap bg-black/70 px-1 font-mono text-[9px] text-[color:var(--polish)]">
+                    panel x{PANEL.x} y{PANEL.y} w{PANEL.width} h{PANEL.height} · {PANEL.realWidthIn}
+                    "
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex items-center justify-between border-t border-[color:var(--wake)]/15 bg-[color:var(--hull)] px-4 py-2 font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
-            <span>PREVIEW · {finish.label.toUpperCase()}</span>
+            <span>
+              {customMode ? "YOUR PHOTO" : "PREVIEW"} · {finish.label.toUpperCase()}
+            </span>
             <span>
               {config.size}" LETTERS · ≈{runLabel} RUN
             </span>
@@ -352,10 +563,46 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
           </p>
         )}
 
+        {/* Custom photo intake — reuses the quote form's photo path on submit. */}
+        <div className="mt-3 rounded-sm border border-[color:var(--wake)]/15 bg-[color:var(--hull)] p-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-sm border border-[color:var(--wake)]/30 px-3 py-2 font-mono text-[10px] font-semibold tracking-[0.2em] text-[color:var(--gelcoat)] transition hover:border-[color:var(--polish)]">
+              {photoBusy ? "LOADING…" : customMode ? "REPLACE PHOTO" : "USE YOUR OWN PHOTO ↑"}
+              <input
+                type="file"
+                accept={ACCEPTED_TYPES}
+                onChange={onPhotoPick}
+                disabled={photoBusy}
+                className="sr-only"
+              />
+            </label>
+            {customMode && (
+              <button
+                type="button"
+                onClick={useStockTransom}
+                className="inline-flex items-center gap-2 rounded-sm border border-[color:var(--wake)]/20 px-3 py-2 font-mono text-[10px] font-semibold tracking-[0.2em] text-[color:var(--wake)] transition hover:border-[color:var(--wake)]/45 hover:text-[color:var(--gelcoat)]"
+              >
+                USE STOCK TRANSOM
+              </button>
+            )}
+          </div>
+          <p className="mt-2 font-mono text-[10px] leading-relaxed tracking-widest text-[color:var(--wake)]">
+            YOUR PHOTO STAYS ON YOUR DEVICE UNTIL YOU SEND US A QUOTE.
+          </p>
+          {photoError && (
+            <p
+              className="mt-2 font-mono text-[10px] leading-relaxed tracking-widest text-red-400"
+              role="alert"
+            >
+              {photoError}
+            </p>
+          )}
+        </div>
+
         <div className="mt-3 flex items-center justify-between gap-3">
           <button
             type="button"
-            onClick={saveProof}
+            onClick={downloadProof}
             disabled={saving}
             className="inline-flex items-center gap-2 rounded-sm border border-[color:var(--wake)]/30 px-3 py-2 font-mono text-[10px] font-semibold tracking-[0.2em] text-[color:var(--gelcoat)] transition hover:border-[color:var(--polish)] disabled:opacity-60"
           >
@@ -510,7 +757,9 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
           })}
         </RadioField>
 
-        <Field label={`Letter height — ${config.size}"`}>
+        <Field
+          label={`${customMode ? "Requested letter height" : "Letter height"} — ${config.size}"`}
+        >
           <input
             type="range"
             min={3}
@@ -527,14 +776,61 @@ export function TransomPreviewer({ config, onChange, onQuote }: Props) {
             <span>≈ {runLabel} TOTAL RUN</span>
             <span>14"</span>
           </div>
+          {customMode && (
+            <p className="mt-2 font-mono text-[10px] leading-relaxed tracking-widest text-[color:var(--polish)]">
+              SHOWN FOR PLACEMENT — FINAL SIZING CONFIRMED AT PROOF.
+            </p>
+          )}
         </Field>
+
+        {/* Placement sliders — keyboard/desktop parity with drag + pinch. */}
+        {customMode && (
+          <div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label={`On-screen size — ${Math.round(placement.scale * 100)}%`}>
+                <input
+                  type="range"
+                  min={SCALE_MIN}
+                  max={SCALE_MAX}
+                  step={0.05}
+                  value={placement.scale}
+                  aria-label="On-screen lettering size for placement"
+                  onChange={(e) =>
+                    setPlacement((p) => ({ ...p, scale: parseFloat(e.target.value) }))
+                  }
+                  className="w-full accent-[color:var(--polish)]"
+                />
+              </Field>
+              <Field label={`Rotation — ${Math.round(placement.rot)}°`}>
+                <input
+                  type="range"
+                  min={-30}
+                  max={30}
+                  step={1}
+                  value={Math.max(-30, Math.min(30, placement.rot))}
+                  aria-label="Lettering rotation in degrees"
+                  onChange={(e) => setPlacement((p) => ({ ...p, rot: parseFloat(e.target.value) }))}
+                  className="w-full accent-[color:var(--polish)]"
+                />
+              </Field>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPlacement(DEFAULT_PLACEMENT)}
+              className="mt-2 font-mono text-[10px] tracking-widest text-[color:var(--wake)] underline underline-offset-4 hover:text-[color:var(--gelcoat)]"
+            >
+              RESET PLACEMENT
+            </button>
+          </div>
+        )}
 
         <button
           type="button"
-          onClick={onQuote}
-          className="mt-2 inline-flex items-center justify-center gap-3 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-5 py-3 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90"
+          onClick={handleQuote}
+          disabled={preparing}
+          className="mt-2 inline-flex items-center justify-center gap-3 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-5 py-3 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90 disabled:opacity-60"
         >
-          GET THIS QUOTED →
+          {preparing ? "PREPARING…" : "GET THIS QUOTED →"}
         </button>
       </div>
     </div>

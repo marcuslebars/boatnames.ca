@@ -22,6 +22,9 @@ type Props = {
   // /install embeds this form preselected to the install tier; the homepage
   // leads with the national product, so it defaults to "ship".
   defaultFulfillment?: Fulfillment;
+  // Phase 2: the composited custom-photo proof from the previewer. Attached
+  // through the photo field on submit unless the visitor picked their own file.
+  proofPhoto?: File | null;
 };
 
 type Status = "idle" | "sending" | "ok" | "error";
@@ -37,7 +40,7 @@ const FULFILLMENT_OPTIONS: [Fulfillment, string][] = [
   ["unsure", "Not sure yet"],
 ];
 
-export function QuoteForm({ prefill, defaultFulfillment = "ship" }: Props) {
+export function QuoteForm({ prefill, defaultFulfillment = "ship", proofPhoto = null }: Props) {
   const [status, setStatus] = useState<Status>("idle");
   const [errMsg, setErrMsg] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -101,6 +104,14 @@ export function QuoteForm({ prefill, defaultFulfillment = "ship" }: Props) {
     fd.set("consent_text", CONSENT_TEXT);
     fd.set("source", "boatnames.ca");
     for (const [key, val] of Object.entries(utm.current)) fd.set(key, val);
+
+    // Attach the previewer's composited proof (custom photo + lettering) unless
+    // the visitor picked their own file above — reuses this same multipart photo
+    // field, no second upload path.
+    const picked = fd.get("photo");
+    if (!(picked instanceof File && picked.size > 0) && proofPhoto) {
+      fd.set("photo", proofPhoto);
+    }
 
     // Per-font measured run length for the quote + CRM envelope.
     const fontKey = String(fd.get("font") ?? prefill.font);
@@ -276,6 +287,12 @@ export function QuoteForm({ prefill, defaultFulfillment = "ship" }: Props) {
             ? "A CLEAN SQUARE-ON PHOTO IS HOW WE TEMPLATE AND CONFIRM DIMENSIONS BEFORE CUTTING. JPG, PNG, WEBP OR HEIC, UP TO 10 MB."
             : "A CLEAN SQUARE-ON PHOTO HELPS US PREP. JPG, PNG, WEBP OR HEIC, UP TO 10 MB."}
         </p>
+        {proofPhoto && (
+          <p className="mt-2 rounded-sm border border-[color:var(--polish)]/40 bg-[color:var(--polish)]/5 p-2 font-mono text-[10px] leading-relaxed tracking-widest text-[color:var(--polish)]">
+            ✓ YOUR DESIGN PREVIEW — YOUR PHOTO WITH THE LETTERING PLACED — WILL BE ATTACHED. PICK A
+            FILE ABOVE TO SEND A DIFFERENT PHOTO INSTEAD.
+          </p>
+        )}
       </div>
 
       <Input
