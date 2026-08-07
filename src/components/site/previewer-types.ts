@@ -68,6 +68,27 @@ export const VINYL_FINISHES: FinishOption[] = [
 
 export const ALL_FINISHES: FinishOption[] = [...ACRYLIC_FINISHES, ...VINYL_FINISHES];
 
+/**
+ * Acrylic height bands for the size selector. These MUST mirror the pricing rate
+ * card (src/server/pricing/rate-card.ts) — the engine's golden fixtures guard the
+ * pricing side; this is the input side, chosen so a buyable acrylic config always
+ * lands in a priced band (no between-band gaps). `repIn` is the height stored in
+ * config.size when a band is chosen (drives the run-length estimate + the quote).
+ */
+export const ACRYLIC_HEIGHT_BANDS = [
+  { key: "s", label: '4–6"', repIn: 6, minIn: 4, maxIn: 6 },
+  { key: "m", label: '7–10"', repIn: 8, minIn: 7, maxIn: 10 },
+  { key: "l", label: '11–14"', repIn: 12, minIn: 11, maxIn: 14 },
+] as const;
+
+/** Cut vinyl is priced up to this height; the previewer caps its slider here. */
+export const VINYL_MAX_HEIGHT_IN = 12;
+
+/** The band a given height falls in, or null (between bands / out of range). */
+export function acrylicBandOf(sizeIn: number) {
+  return ACRYLIC_HEIGHT_BANDS.find((b) => sizeIn >= b.minIn && sizeIn <= b.maxIn) ?? null;
+}
+
 /** The finish set offered for a product line. */
 export function finishOptionsFor(line: ProductLine): FinishOption[] {
   return line === "vinyl" ? VINYL_FINISHES : ACRYLIC_FINISHES;

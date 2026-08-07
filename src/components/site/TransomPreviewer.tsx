@@ -2,7 +2,10 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ImgSlot } from "./ImgSlot";
 import { FALLBACK_RATIO, measureRatios, type Ratio } from "./previewer-measure";
 import {
+  ACRYLIC_HEIGHT_BANDS,
   FONT_OPTIONS,
+  VINYL_MAX_HEIGHT_IN,
+  acrylicBandOf,
   defaultFinishFor,
   finishOptionsFor,
   type Finish,
@@ -176,6 +179,31 @@ function drawSpecStrip(ctx: CanvasRenderingContext2D, W: number, H: number, spec
 
 function toBlob(canvas: HTMLCanvasElement): Promise<Blob | null> {
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+}
+
+/** Response from /api/price. `disabled` until CHECKOUT_ENABLED=1. */
+type PriceResp =
+  | {
+      status: "priced";
+      currency: string;
+      subtotalCents: number;
+      shippingCents: number;
+      totalCents: number;
+      pricingVersion?: string;
+    }
+  | { status: "unpriced"; reason: string }
+  | { status: "disabled" }
+  | { status: "error"; error?: string };
+
+function fmtCents(cents: number): string {
+  return `$${(cents / 100).toFixed(cents % 100 ? 2 : 0)}`;
+}
+
+/** Keep the size valid for the line when switching: vinyl caps at its max height,
+ *  acrylic snaps to a priced band if the current height is between bands. */
+function snapSizeForLine(line: ProductLine, size: number): number {
+  if (line === "vinyl") return Math.min(size, VINYL_MAX_HEIGHT_IN);
+  return acrylicBandOf(size) ? size : ACRYLIC_HEIGHT_BANDS[0].repIn;
 }
 
 function moveRadioFocus(el: HTMLElement, index: number) {
@@ -482,6 +510,46 @@ export function TransomPreviewer({ config, onChange, onQuote, onProof }: Props) 
     onQuote();
   }
 
+  // Live server-authoritative price (dark until CHECKOUT_ENABLED=1: the endpoint
+  // returns `disabled`, so nothing price-related renders). Debounced; the client
+  // never computes or trusts a price — it only displays what the server returns.
+  const [price, setPrice] = useState<PriceResp | null>(null);
+  useEffect(() => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => {
+      fetch("/api/price", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          line: config.line,
+          name: config.name,
+          port: config.port,
+          finish: config.finish,
+          size: config.size,
+        }),
+        signal: ctrl.signal,
+      })
+        .then((r) => (r.ok ? (r.json() as Promise<PriceResp>) : null))
+        .then((data) => setPrice(data))
+        .catch(() => {
+          /* aborted or offline — keep the last price shown */
+        });
+    }, 400);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [config.line, config.name, config.port, config.finish, config.size]);
+
+  const priced = price?.status === "priced" ? price : null;
+  const quoteOnly = price?.status === "unpriced";
+  // Everything Phase 3+ stays dark until the endpoint stops returning `disabled`
+  // (i.e. until CHECKOUT_ENABLED=1). Until then the previewer is byte-identical to
+  // before: free 3–14" slider, no bands, no price.
+  const checkoutOn = price != null && price.status !== "disabled";
+  const useBandSelector = isAcrylic && checkoutOn;
+  const sliderMax = checkoutOn && !isAcrylic ? VINYL_MAX_HEIGHT_IN : 14;
+
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.4fr_1fr]">
       {/* Preview canvas + proof */}
@@ -636,7 +704,14 @@ export function TransomPreviewer({ config, onChange, onQuote, onProof }: Props) 
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  onClick={() => onChange({ ...config, line: ln, finish: defaultFinishFor(ln) })}
+                  onClick={() =>
+                    onChange({
+                      ...config,
+                      line: ln,
+                      finish: defaultFinishFor(ln),
+                      size: checkoutOn ? snapSizeForLine(ln, config.size) : config.size,
+                    })
+                  }
                   className={`rounded-sm border px-3 py-2.5 font-sans text-[11px] font-semibold uppercase tracking-[0.2em] transition ${
                     active
                       ? "border-[color:var(--polish)] bg-[color:var(--polish)]/10 text-[color:var(--gelcoat)]"
@@ -758,23 +833,53 @@ export function TransomPreviewer({ config, onChange, onQuote, onProof }: Props) 
         </RadioField>
 
         <Field
-          label={`${customMode ? "Requested letter height" : "Letter height"} — ${config.size}"`}
+          label={`${customMode ? "Requested letter height" : "Letter height"}${
+            useBandSelector ? " band" : ` — ${config.size}"`
+          }`}
         >
-          <input
-            type="range"
-            min={3}
-            max={14}
-            step={0.5}
-            value={config.size}
-            aria-label="Letter height in inches"
-            aria-valuetext={`${config.size} inch letters`}
-            onChange={(e) => onChange({ ...config, size: parseFloat(e.target.value) })}
-            className="w-full accent-[color:var(--polish)]"
-          />
+          {useBandSelector ? (
+            <div
+              role="radiogroup"
+              aria-label="Letter height band"
+              className="grid grid-cols-3 gap-2"
+            >
+              {ACRYLIC_HEIGHT_BANDS.map((b) => {
+                const active = acrylicBandOf(config.size)?.key === b.key;
+                return (
+                  <button
+                    key={b.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => onChange({ ...config, size: b.repIn })}
+                    className={`rounded-sm border px-2 py-2.5 font-mono text-[11px] tracking-widest transition ${
+                      active
+                        ? "border-[color:var(--polish)] bg-[color:var(--polish)]/10 text-[color:var(--gelcoat)]"
+                        : "border-[color:var(--wake)]/20 text-[color:var(--wake)] hover:border-[color:var(--wake)]/40"
+                    }`}
+                  >
+                    {b.label}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <input
+              type="range"
+              min={3}
+              max={sliderMax}
+              step={0.5}
+              value={config.size}
+              aria-label="Letter height in inches"
+              aria-valuetext={`${config.size} inch letters`}
+              onChange={(e) => onChange({ ...config, size: parseFloat(e.target.value) })}
+              className="w-full accent-[color:var(--polish)]"
+            />
+          )}
           <div className="mt-1 flex justify-between font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
-            <span>3"</span>
+            <span>{useBandSelector ? "" : '3"'}</span>
             <span>≈ {runLabel} TOTAL RUN</span>
-            <span>14"</span>
+            <span>{useBandSelector ? "" : `${sliderMax}"`}</span>
           </div>
           {customMode && (
             <p className="mt-2 font-mono text-[10px] leading-relaxed tracking-widest text-[color:var(--polish)]">
@@ -821,6 +926,47 @@ export function TransomPreviewer({ config, onChange, onQuote, onProof }: Props) 
             >
               RESET PLACEMENT
             </button>
+          </div>
+        )}
+
+        {(priced || quoteOnly) && (
+          <div className="rounded-sm border border-[color:var(--wake)]/20 bg-[color:var(--hull)] p-4">
+            {priced ? (
+              <>
+                <div className="flex items-baseline justify-between">
+                  <span className="font-mono text-[10px] tracking-widest text-[color:var(--wake)]">
+                    PRICE · {priced.currency}
+                  </span>
+                  <span className="font-sans text-3xl font-bold text-[color:var(--gelcoat)]">
+                    {fmtCents(priced.subtotalCents)}
+                  </span>
+                </div>
+                <p className="mt-1 font-mono text-[10px] leading-relaxed tracking-widest text-[color:var(--wake)]">
+                  INCLUDES DESIGN, PROOF, TEMPLATE &amp; APPLICATION GUIDE.
+                </p>
+                <div className="mt-3 space-y-1 border-t border-[color:var(--wake)]/15 pt-3 font-mono text-[11px] text-[color:var(--gelcoat)]/80">
+                  <div className="flex justify-between">
+                    <span>Shipping</span>
+                    <span>
+                      {priced.shippingCents === 0
+                        ? "FREE (over $400)"
+                        : fmtCents(priced.shippingCents)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[color:var(--gelcoat)]">
+                    <span>Total before tax</span>
+                    <span>{fmtCents(priced.totalCents)}</span>
+                  </div>
+                </div>
+                <p className="mt-2 font-mono text-[9px] tracking-widest text-[color:var(--wake)]">
+                  TAX ADDED AT CHECKOUT · SHIPPING FINALISED FROM YOUR ADDRESS
+                </p>
+              </>
+            ) : (
+              <p className="font-mono text-[10px] leading-relaxed tracking-widest text-[color:var(--wake)]">
+                THIS SIZE IS QUOTE-ONLY — SEND A QUOTE BELOW AND WE'LL PRICE IT BY HAND.
+              </p>
+            )}
           </div>
         )}
 
