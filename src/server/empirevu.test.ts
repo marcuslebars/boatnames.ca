@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  boatnamesOrderSource,
   buildBoatnamesEnvelope,
+  buildBoatnamesOrderEnvelope,
   forwardToEmpireVu,
   signEmpireVuBody,
   type BoatnamesLead,
@@ -15,6 +17,7 @@ import { leadEnvelopeSchema } from "./lead-envelope-schema";
 import {
   SAMPLE_SHIP_ACRYLIC,
   SAMPLE_INSTALL_VINYL,
+  SAMPLE_ORDER,
   SAMPLE_RECEIVED_AT,
 } from "./__fixtures__/boatnames-sample";
 
@@ -67,10 +70,53 @@ describe("buildBoatnamesEnvelope matches the golden fixtures (drift guard)", () 
   });
 });
 
+describe("buildBoatnamesOrderEnvelope — paid-order forward (drift + contract)", () => {
+  it("matches the golden fixture", () => {
+    expect(buildBoatnamesOrderEnvelope(SAMPLE_ORDER, SAMPLE_RECEIVED_AT)).toEqual(
+      fixture("boatnames-order-paid.json"),
+    );
+  });
+
+  it("is schema-valid — the intake accepts it without stripping keys", () => {
+    const env = buildBoatnamesOrderEnvelope(SAMPLE_ORDER, SAMPLE_RECEIVED_AT);
+    expect(leadEnvelopeSchema.parse(env)).toEqual(env);
+  });
+
+  it("uses a distinct source tag + the canonical formType (no enum change)", () => {
+    const env = buildBoatnamesOrderEnvelope(SAMPLE_ORDER, SAMPLE_RECEIVED_AT);
+    expect(env.source).toBe("boatnames_order_paid");
+    expect(boatnamesOrderSource()).toBe("boatnames_order_paid");
+    expect(env.formType).toBe("quote");
+    expect(env.sourceSite).toBe("boatnames");
+  });
+
+  it("folds order id + amount into message, never structured/top-level keys", () => {
+    const env = buildBoatnamesOrderEnvelope(SAMPLE_ORDER, SAMPLE_RECEIVED_AT);
+    expect(env.message).toContain("ord_test_0001");
+    expect(env.message).toContain("$507 CAD");
+    expect(env).not.toHaveProperty("orderId");
+    expect(env).not.toHaveProperty("totalCents");
+    expect(env).not.toHaveProperty("lineItems");
+    expect(Object.keys(env).sort()).toEqual(
+      [
+        "contact",
+        "formType",
+        "message",
+        "meta",
+        "receivedAt",
+        "schemaVersion",
+        "source",
+        "sourceSite",
+      ].sort(),
+    );
+  });
+});
+
 describe("the canonical + boatnames fixtures are all schema-valid", () => {
   for (const name of [
     "boatnames-ship-acrylic.json",
     "boatnames-install-vinyl.json",
+    "boatnames-order-paid.json",
     "care-contact.json",
     "care-booking.json",
     "storage-quote.json",

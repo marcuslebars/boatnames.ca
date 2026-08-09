@@ -151,6 +151,76 @@ export function buildBoatnamesEnvelope(lead: BoatnamesLead, receivedAt: string):
   };
 }
 
+// ── Paid-order forward (Phase 5) ──────────────────────────────────────────────
+// A paid order forwards through the SAME envelope contract — no new top-level
+// keys, no structured order fields (the intake strips unknowns). The order id +
+// amount ride the free-text `message` (the extension point); the distinct
+// `source` tag "boatnames_order_paid" separates orders from quotes for reporting.
+// Cross-repo: the a1-boatnames company + an order fixture must be synced in the
+// EmpireVu intake before this goes live (same gate as the quote forward).
+
+export function boatnamesOrderSource(): string {
+  return "boatnames_order_paid";
+}
+
+export interface BoatnamesOrder {
+  orderId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  boatName?: string;
+  hailingPort?: string;
+  font?: string;
+  finish?: string;
+  line?: string;
+  letterHeightIn?: number;
+  totalCents?: number;
+  currency?: string;
+  shipCity?: string;
+  shipProvince?: string;
+}
+
+function orderAmount(cents: number | undefined, currency: string): string | undefined {
+  if (cents == null) return undefined;
+  return `$${(cents / 100).toFixed(cents % 100 ? 2 : 0)} ${currency}`;
+}
+
+export function buildBoatnamesOrderEnvelope(
+  order: BoatnamesOrder,
+  receivedAt: string,
+): LeadEnvelope {
+  const product = order.line === "vinyl" ? "Cut vinyl" : "Cast acrylic";
+  const design = [
+    order.boatName?.trim() ? `"${order.boatName.trim()}"` : undefined,
+    order.hailingPort?.trim() ? `Port: ${order.hailingPort.trim()}` : undefined,
+    order.font,
+    order.finish,
+    order.letterHeightIn ? `${order.letterHeightIn}" letters` : undefined,
+  ].filter((p): p is string => Boolean(p));
+  const amount = orderAmount(order.totalCents, order.currency ?? "CAD");
+  const shipTo = [order.shipCity, order.shipProvince].filter(Boolean).join(", ");
+
+  const message = [
+    `PAID ORDER — ${product} boat name lettering${design.length ? ` — ${design.join(" · ")}` : ""}.`,
+    amount ? `Paid: ${amount} (incl. tax).` : undefined,
+    `Order ref: ${order.orderId}.`,
+    shipTo ? `Ship to: ${shipTo}.` : undefined,
+  ]
+    .filter((p): p is string => Boolean(p))
+    .join("\n");
+
+  return {
+    schemaVersion: 1,
+    source: boatnamesOrderSource(),
+    sourceSite: BOATNAMES_SOURCE_SITE,
+    formType: "quote",
+    receivedAt,
+    contact: { name: order.name, email: order.email, phone: order.phone },
+    message,
+    meta: { site: "boatnames.ca", page: "/order" },
+  };
+}
+
 // ── HMAC + transport — copied VERBATIM from the Care spoke ────────────────────
 
 export function signEmpireVuBody(rawBody: string, secret: string): string {

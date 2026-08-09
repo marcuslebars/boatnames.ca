@@ -35,7 +35,10 @@ export const Route = createFileRoute("/api/admin/orders/$id/status")({
           return json({ ok: false, error: "A valid status is required." }, 400);
         }
 
-        const result = await transitionOrder(id, parsed.data.status);
+        const result = await transitionOrder(id, parsed.data.status, {
+          tracking_number: parsed.data.tracking_number,
+          carrier: parsed.data.carrier,
+        });
         if (!result.ok) return json({ ok: false, error: result.error }, result.status);
         return json({ ok: true, order: result.order }, 200);
       },

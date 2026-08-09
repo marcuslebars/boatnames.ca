@@ -76,5 +76,8 @@ export type CreateOrderInput = z.infer<typeof createOrderInputSchema>;
 // Admin PATCH /api/admin/orders/:id/status input.
 export const orderStatusPatchSchema = z.object({
   status: orderStatusSchema,
+  // Shipment tracking — only applied on the `shipped` transition.
+  tracking_number: z.string().max(120).optional(),
+  carrier: z.string().max(60).optional(),
 });
 export type OrderStatusPatch = z.infer<typeof orderStatusPatchSchema>;

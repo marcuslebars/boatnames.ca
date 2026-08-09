@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "source": "boatnames_order_paid",
+  "sourceSite": "boatnames",
+  "formType": "quote",
+  "receivedAt": "2026-07-25T15:00:00.000Z",
+  "contact": {
+    "name": "Marcus Reed",
+    "email": "marcus@example.com"
+  },
+  "message": "PAID ORDER — Cast acrylic boat name lettering — \"Second Wind\" · Port: Midland, ON · Transom Serif · Mirror Gold · 8\" letters.\nPaid: $507 CAD (incl. tax).\nOrder ref: ord_test_0001.\nShip to: Midland, ON.",
+  "meta": {
+    "site": "boatnames.ca",
+    "page": "/order"
+  }
+}

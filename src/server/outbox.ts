@@ -30,6 +30,28 @@ export async function insertOutbox(
   return (data as { id: string }).id;
 }
 
+/**
+ * Same as insertOutbox but for a PAID ORDER envelope (order_id, not
+ * quote_request_id). idempotencyKey = the order id — the replay dedupe key.
+ */
+export async function insertOrderOutbox(
+  orderId: string,
+  idempotencyKey: string,
+  envelope: LeadEnvelope,
+): Promise<string | null> {
+  const admin = supabaseAdmin();
+  const { data, error } = await admin
+    .from("empirevu_outbox")
+    .insert({ order_id: orderId, idempotency_key: idempotencyKey, envelope, status: "pending" })
+    .select("id")
+    .single();
+  if (error) {
+    console.error("[outbox] order insert failed:", error.message);
+    return null;
+  }
+  return (data as { id: string }).id;
+}
+
 export async function markOutbox(id: string, result: ForwardResult): Promise<void> {
   const admin = supabaseAdmin();
   const { error } = await admin

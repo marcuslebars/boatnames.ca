@@ -1,4 +1,4 @@
-import type { BoatnamesLead } from "../empirevu";
+import type { BoatnamesLead, BoatnamesOrder } from "../empirevu";
 
 /**
  * Canonical samples used to generate + pin the boatnames golden fixtures. Keep
@@ -49,6 +49,23 @@ export const SAMPLE_INSTALL_VINYL: BoatnamesLead = {
   previewUrl:
     "https://boatnames.ca/?name=Knot+Working&line=vinyl&font=deck-sans&finish=vinyl-gold&size=6#previewer",
   utm: { utm_source: "instagram", utm_campaign: "install" },
+};
+
+/** A paid order used to pin the boatnames_order_paid envelope fixture. */
+export const SAMPLE_ORDER: BoatnamesOrder = {
+  orderId: "ord_test_0001",
+  name: "Marcus Reed",
+  email: "marcus@example.com",
+  boatName: "Second Wind",
+  hailingPort: "Midland, ON",
+  font: "Transom Serif",
+  finish: "Mirror Gold",
+  line: "acrylic",
+  letterHeightIn: 8,
+  totalCents: 50700,
+  currency: "CAD",
+  shipCity: "Midland",
+  shipProvince: "ON",
 };
 
 export const SAMPLE_RECEIVED_AT = "2026-07-25T15:00:00.000Z";

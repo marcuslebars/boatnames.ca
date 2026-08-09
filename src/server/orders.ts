@@ -4,6 +4,8 @@ import {
   type OrderStatus,
 } from "@/components/site/order-schema";
 
+import { sendEmail } from "./email";
+import { orderShippedEmail } from "./order-emails";
 import { getPricingAdapter } from "./pricing";
 import { supabaseAdmin } from "./supabase";
 
@@ -79,7 +81,11 @@ export async function createOrderFromQuote(quoteRequestId: string): Promise<Orde
  * `manual` (launch) returns unpriced, so amounts stay null and the event records
  * that pricing was manual. The pricing seam is reachable ONLY from here.
  */
-export async function transitionOrder(orderId: string, to: OrderStatus): Promise<OrderResult> {
+export async function transitionOrder(
+  orderId: string,
+  to: OrderStatus,
+  extra?: { tracking_number?: string; carrier?: string },
+): Promise<OrderResult> {
   const admin = supabaseAdmin();
   const { data: existing, error: eErr } = await admin
     .from("orders")
@@ -95,6 +101,10 @@ export async function transitionOrder(orderId: string, to: OrderStatus): Promise
   }
 
   const patch: Record<string, unknown> = { status: to, updated_at: new Date().toISOString() };
+  if (to === "shipped") {
+    if (extra?.tracking_number) patch.tracking_number = extra.tracking_number;
+    if (extra?.carrier) patch.carrier = extra.carrier;
+  }
   let pricingNote: Record<string, unknown> | undefined;
 
   if (to === "invoiced") {
@@ -139,5 +149,30 @@ export async function transitionOrder(orderId: string, to: OrderStatus): Promise
     to,
     ...(pricingNote ? { pricing: pricingNote } : {}),
   });
+
+  // On `shipped`, send the customer their tracking. Non-blocking — the status
+  // change is already committed.
+  if (to === "shipped") {
+    const u = updated as Record<string, unknown>;
+    try {
+      const mail = orderShippedEmail({
+        boatName: (u.boat_name as string | null) ?? undefined,
+        carrier: (u.carrier as string | null) ?? undefined,
+        tracking: (u.tracking_number as string | null) ?? undefined,
+      });
+      await sendEmail({
+        to: u.email as string,
+        subject: mail.subject,
+        html: mail.html,
+        text: mail.text,
+      });
+      await appendOrderEvent(orderId, "shipped_email_sent", "system", {
+        tracking: (u.tracking_number as string | null) ?? null,
+      });
+    } catch (err) {
+      console.error("[orders] shipped email failed:", err);
+    }
+  }
+
   return { ok: true, order: updated as Record<string, unknown> };
 }

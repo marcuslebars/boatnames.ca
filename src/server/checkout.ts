@@ -4,10 +4,12 @@ import type Stripe from "stripe";
 
 import { canTransition, type OrderStatus } from "@/components/site/order-schema";
 
-import { sendEmail } from "./email";
+import { buildBoatnamesOrderEnvelope } from "./empirevu";
+import { sendEmail, sendLeadNotification } from "./email";
 import { serverEnv } from "./env";
-import { orderConfirmationEmail, proofReadyEmail } from "./order-emails";
+import { newOrderNotification, orderConfirmationEmail, proofReadyEmail } from "./order-emails";
 import { appendOrderEvent } from "./orders";
+import { forwardAndMark, insertOrderOutbox } from "./outbox";
 import { getPricingAdapter } from "./pricing";
 import { shippingCents } from "./pricing/engine";
 import { PRICING_VERSION } from "./pricing/rate-card";
@@ -133,7 +135,9 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
   const admin = supabaseAdmin();
   const { data: existing } = await admin
     .from("orders")
-    .select("status, email, boat_name, product_line, finish, letter_height_in, currency")
+    .select(
+      "status, email, boat_name, hailing_port, font, product_line, finish, letter_height_in, currency",
+    )
     .eq("id", orderId)
     .single();
   if (!existing) {
@@ -213,6 +217,57 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
     await sendEmail({ to: email, subject: mail.subject, html: mail.html, text: mail.text });
   } catch (e) {
     console.error("[webhook] confirmation email failed:", e); // non-blocking
+  }
+
+  // Phase 5: forward the paid order to EmpireVu (durable outbox + gated forward)
+  // and notify the A1 inbox. Both non-blocking — the payment is already recorded.
+  const shipTo = [patch.ship_city, patch.ship_province].filter(Boolean).join(", ");
+  try {
+    const envelope = buildBoatnamesOrderEnvelope(
+      {
+        orderId,
+        name: (patch.ship_name as string | null) ?? session.customer_details?.name ?? "",
+        email,
+        boatName: (row.boat_name as string | null) ?? undefined,
+        hailingPort: (row.hailing_port as string | null) ?? undefined,
+        font: (row.font as string | null) ?? undefined,
+        finish: (row.finish as string | null) ?? undefined,
+        line: (row.product_line as string | null) ?? undefined,
+        letterHeightIn: (row.letter_height_in as number | null) ?? undefined,
+        totalCents: session.amount_total ?? undefined,
+        currency: (row.currency as string | null) ?? "CAD",
+        shipCity: (patch.ship_city as string | null) ?? undefined,
+        shipProvince: province ?? undefined,
+      },
+      new Date().toISOString(),
+    );
+    const outboxId = await insertOrderOutbox(orderId, orderId, envelope);
+    if (outboxId) {
+      void forwardAndMark(outboxId, envelope).catch((err) =>
+        console.error("[webhook] order forward failed:", err),
+      );
+    }
+  } catch (e) {
+    console.error("[webhook] order outbox failed:", e);
+  }
+
+  try {
+    await sendLeadNotification(
+      newOrderNotification({
+        orderId,
+        name: (patch.ship_name as string | null) ?? undefined,
+        email,
+        boatName: (row.boat_name as string | null) ?? undefined,
+        productLine: (row.product_line as string | null) ?? undefined,
+        finish: (row.finish as string | null) ?? undefined,
+        letterHeightIn: (row.letter_height_in as number | null) ?? undefined,
+        totalCents: session.amount_total,
+        currency: (row.currency as string | null) ?? "CAD",
+        shipTo: shipTo || undefined,
+      }),
+    );
+  } catch (e) {
+    console.error("[webhook] order notification failed:", e);
   }
 }
 

@@ -136,3 +136,57 @@ Your kit includes an application guide and a full-size template. Reply with any 
 boatnames.ca — An A1 Company`;
   return { subject, html, text };
 }
+
+const e = (s: unknown) =>
+  String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+/** Internal notification to the A1 inbox on `paid` — NOT a customer email.
+ *  Subject carries boat name + product + amount. */
+export function newOrderNotification(o: {
+  orderId: string;
+  name?: string;
+  email?: string;
+  boatName?: string;
+  productLine?: string;
+  finish?: string;
+  letterHeightIn?: number;
+  totalCents?: number | null;
+  currency?: string;
+  shipTo?: string;
+}): OrderEmail {
+  const product = o.productLine === "vinyl" ? "Cut vinyl" : "Cast acrylic";
+  const amount = money(o.totalCents, o.currency);
+  const name = o.boatName || "(no name)";
+  const subject = `PAID ORDER — "${name}" · ${product} · ${amount}`;
+  const rows: Array<[string, string | undefined]> = [
+    ["Boat name", o.boatName],
+    ["Product", product],
+    ["Finish", o.finish],
+    ["Letter height", o.letterHeightIn ? `${o.letterHeightIn}"` : undefined],
+    ["Amount paid", amount],
+    ["Customer", o.name],
+    ["Email", o.email],
+    ["Ship to", o.shipTo],
+    ["Order ref", o.orderId],
+  ];
+  const present = rows.filter(([, v]) => v != null && v !== "");
+  const text = `PAID ORDER
+
+${present.map(([k, v]) => `${k}: ${v}`).join("\n")}
+
+Next: send the proof (POST /api/admin/orders/${o.orderId}/send-proof); production starts on the customer's approval.`;
+  const html = shell(`
+    <p style="font-size:12px;letter-spacing:2px;color:${GOLD};margin:0 0 8px">PAID ORDER</p>
+    <h1 style="font-size:20px;margin:0 0 12px">"${e(name)}" — ${product} — ${amount}</h1>
+    <table cellpadding="5" style="border-collapse:collapse;font-size:13px">${present
+      .map(
+        ([k, v]) =>
+          `<tr><td style="font-weight:600;vertical-align:top;color:#555">${k}</td><td>${e(v)}</td></tr>`,
+      )
+      .join("")}</table>
+    <p style="font-size:13px;color:#555;margin-top:16px">Next: send the proof, then production starts on the customer's approval.</p>`);
+  return { subject, html, text };
+}
