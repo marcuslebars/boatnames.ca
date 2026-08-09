@@ -27,6 +27,10 @@ export const serverEnv = {
   resendApiKey: () => optional("RESEND_API_KEY"),
   leadFromEmail: () => optional("LEAD_FROM_EMAIL") ?? "leads@a1marinecare.ca",
   leadNotifyEmail: () => optional("LEAD_NOTIFY_EMAIL") ?? "hello@a1marinecare.ca",
+  // Order emails: `from` on customer-facing order mail, and the A1 inbox that
+  // gets new-order notifications (Phase 5). Resend must verify the from-domain.
+  orderFromEmail: () => optional("ORDER_FROM_EMAIL") ?? "orders@boatnames.ca",
+  orderNotifyEmail: () => optional("ORDER_NOTIFY_EMAIL") ?? "hello@boatnames.ca",
 
   // EmpireVu forward (gated OFF by default in this repo)
   empirevuIntakeUrl: () => optional("EMPIREVU_INTAKE_URL"),
@@ -40,6 +44,10 @@ export const serverEnv = {
   checkoutEnabled: () => process.env.CHECKOUT_ENABLED === "1",
   paymentProvider: () => optional("PAYMENT_PROVIDER") ?? "none",
   adminApiToken: () => optional("ADMIN_API_TOKEN"),
+  // Stripe (server-only). Validated by assertCheckoutEnv when CHECKOUT_ENABLED=1
+  // and PAYMENT_PROVIDER=stripe. Test keys first; the live-key swap is the owner's.
+  stripeSecretKey: () => optional("STRIPE_SECRET_KEY"),
+  stripeWebhookSecret: () => optional("STRIPE_WEBHOOK_SECRET"),
 
   // Public site origin (also available client-side as VITE_SITE_URL)
   siteUrl: () => optional("SITE_URL") ?? optional("VITE_SITE_URL") ?? "https://boatnames.ca",

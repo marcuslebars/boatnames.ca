@@ -550,6 +550,46 @@ export function TransomPreviewer({ config, onChange, onQuote, onProof }: Props) 
   const useBandSelector = isAcrylic && checkoutOn;
   const sliderMax = checkoutOn && !isAcrylic ? VINYL_MAX_HEIGHT_IN : 14;
 
+  // Buy now — collects a name + email, then hands off to server-created Stripe
+  // Checkout (the server recomputes the price). The quote path stays available.
+  const [buyName, setBuyName] = useState("");
+  const [buyEmail, setBuyEmail] = useState("");
+  const [buying, setBuying] = useState(false);
+  const [buyError, setBuyError] = useState("");
+  async function handleBuyNow() {
+    setBuyError("");
+    if (!buyName.trim() || !/.+@.+\..+/.test(buyEmail)) {
+      setBuyError("Enter your name and a valid email.");
+      return;
+    }
+    setBuying(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          line: config.line,
+          name: config.name,
+          port: config.port,
+          finish: config.finish,
+          size: config.size,
+          customer_name: buyName,
+          customer_email: buyEmail,
+        }),
+      });
+      const data = (await res.json().catch(() => null)) as { url?: string; error?: string } | null;
+      if (res.ok && data?.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setBuyError(data?.error ?? "Could not start checkout. Please try again.");
+    } catch {
+      setBuyError("Could not reach checkout. Please try again.");
+    } finally {
+      setBuying(false);
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.4fr_1fr]">
       {/* Preview canvas + proof */}
@@ -961,6 +1001,45 @@ export function TransomPreviewer({ config, onChange, onQuote, onProof }: Props) 
                 <p className="mt-2 font-mono text-[9px] tracking-widest text-[color:var(--wake)]">
                   TAX ADDED AT CHECKOUT · SHIPPING FINALISED FROM YOUR ADDRESS
                 </p>
+                <div className="mt-4 border-t border-[color:var(--wake)]/15 pt-4">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <input
+                      type="text"
+                      value={buyName}
+                      onChange={(e) => setBuyName(e.target.value)}
+                      placeholder="Your name"
+                      aria-label="Your name"
+                      className="w-full rounded-sm border border-[color:var(--wake)]/25 bg-[color:var(--hull)] px-3 py-2 text-sm text-[color:var(--gelcoat)] outline-none transition focus:border-[color:var(--polish)]"
+                    />
+                    <input
+                      type="email"
+                      value={buyEmail}
+                      onChange={(e) => setBuyEmail(e.target.value)}
+                      placeholder="Email (receipt & proof)"
+                      aria-label="Email for your receipt and proof"
+                      className="w-full rounded-sm border border-[color:var(--wake)]/25 bg-[color:var(--hull)] px-3 py-2 text-sm text-[color:var(--gelcoat)] outline-none transition focus:border-[color:var(--polish)]"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleBuyNow}
+                    disabled={buying}
+                    className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-sm border border-[color:var(--polish)] bg-[color:var(--polish)] px-5 py-3 font-sans text-[11px] font-semibold tracking-[0.2em] text-[color:var(--hull)] transition hover:bg-[color:var(--polish)]/90 disabled:opacity-60"
+                  >
+                    {buying ? "STARTING CHECKOUT…" : `BUY NOW · ${fmtCents(priced.totalCents)} →`}
+                  </button>
+                  <p className="mt-2 font-mono text-[9px] leading-relaxed tracking-widest text-[color:var(--wake)]">
+                    SECURE CHECKOUT BY STRIPE · OR USE “GET A QUOTE” BELOW FOR A HUMAN.
+                  </p>
+                  {buyError && (
+                    <p
+                      className="mt-2 font-mono text-[10px] tracking-widest text-red-400"
+                      role="alert"
+                    >
+                      {buyError}
+                    </p>
+                  )}
+                </div>
               </>
             ) : (
               <p className="font-mono text-[10px] leading-relaxed tracking-widest text-[color:var(--wake)]">

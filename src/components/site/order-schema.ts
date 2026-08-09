@@ -31,15 +31,19 @@ export const orderEventActorSchema = z.enum(["system", "admin", "webhook"]);
 export type OrderEventActor = z.infer<typeof orderEventActorSchema>;
 
 /**
- * Legal status transitions. A checkout later automates draft -> paid; the manual
- * admin path walks this by hand. `cancelled` and `refunded` are terminal. Note
- * there is NO draft -> shipped (the illegal-transition guard the DoD checks).
+ * Legal status transitions. Two lifecycles share this ladder:
+ *   - Buy-now (checkout):  draft -> paid -> proofed -> in_production -> shipped
+ *   - Manual quote path:   draft -> proofed -> invoiced -> paid -> ...
+ * `cancelled` and `refunded` are terminal. There is still NO draft -> shipped
+ * (the illegal-transition guard the DoD checks). The Buy-now edges (draft->paid,
+ * paid->proofed, proofed->in_production) are additive — every quote-path edge is
+ * unchanged.
  */
 export const ORDER_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
-  draft: ["proofed", "cancelled"],
-  proofed: ["invoiced", "cancelled"],
+  draft: ["paid", "proofed", "cancelled"],
+  proofed: ["invoiced", "in_production", "cancelled"],
   invoiced: ["paid", "cancelled"],
-  paid: ["in_production", "shipped", "install_scheduled", "refunded"],
+  paid: ["proofed", "in_production", "shipped", "install_scheduled", "refunded"],
   in_production: ["shipped", "install_scheduled", "cancelled"],
   shipped: ["completed", "refunded"],
   install_scheduled: ["completed", "cancelled"],

@@ -13,12 +13,17 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as NamesRouteImport } from './routes/names'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OrderThankYouRouteImport } from './routes/order.thank-you'
 import { Route as GalleryHolyShipRouteImport } from './routes/gallery/holy-ship'
 import { Route as ApiQuoteRouteImport } from './routes/api/quote'
 import { Route as ApiPriceRouteImport } from './routes/api/price'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiCheckoutRouteImport } from './routes/api/checkout'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe.webhook'
+import { Route as ApiOrdersApproveRouteImport } from './routes/api/orders.approve'
 import { Route as ApiAdminOrdersRouteImport } from './routes/api/admin/orders'
 import { Route as ApiAdminOrdersIdStatusRouteImport } from './routes/api/admin/orders.$id.status'
+import { Route as ApiAdminOrdersIdSendProofRouteImport } from './routes/api/admin/orders.$id.send-proof'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -38,6 +43,11 @@ const InstallRoute = InstallRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrderThankYouRoute = OrderThankYouRouteImport.update({
+  id: '/order/thank-you',
+  path: '/order/thank-you',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GalleryHolyShipRoute = GalleryHolyShipRouteImport.update({
@@ -60,6 +70,21 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
   path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCheckoutRoute = ApiCheckoutRouteImport.update({
+  id: '/api/checkout',
+  path: '/api/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe/webhook',
+  path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOrdersApproveRoute = ApiOrdersApproveRouteImport.update({
+  id: '/api/orders/approve',
+  path: '/api/orders/approve',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminOrdersRoute = ApiAdminOrdersRouteImport.update({
   id: '/api/admin/orders',
   path: '/api/admin/orders',
@@ -70,17 +95,28 @@ const ApiAdminOrdersIdStatusRoute = ApiAdminOrdersIdStatusRouteImport.update({
   path: '/$id/status',
   getParentRoute: () => ApiAdminOrdersRoute,
 } as any)
+const ApiAdminOrdersIdSendProofRoute =
+  ApiAdminOrdersIdSendProofRouteImport.update({
+    id: '/$id/send-proof',
+    path: '/$id/send-proof',
+    getParentRoute: () => ApiAdminOrdersRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/install': typeof InstallRoute
   '/names': typeof NamesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/checkout': typeof ApiCheckoutRoute
   '/api/health': typeof ApiHealthRoute
   '/api/price': typeof ApiPriceRoute
   '/api/quote': typeof ApiQuoteRoute
   '/gallery/holy-ship': typeof GalleryHolyShipRoute
+  '/order/thank-you': typeof OrderThankYouRoute
   '/api/admin/orders': typeof ApiAdminOrdersRouteWithChildren
+  '/api/orders/approve': typeof ApiOrdersApproveRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/admin/orders/$id/send-proof': typeof ApiAdminOrdersIdSendProofRoute
   '/api/admin/orders/$id/status': typeof ApiAdminOrdersIdStatusRoute
 }
 export interface FileRoutesByTo {
@@ -88,11 +124,16 @@ export interface FileRoutesByTo {
   '/install': typeof InstallRoute
   '/names': typeof NamesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/checkout': typeof ApiCheckoutRoute
   '/api/health': typeof ApiHealthRoute
   '/api/price': typeof ApiPriceRoute
   '/api/quote': typeof ApiQuoteRoute
   '/gallery/holy-ship': typeof GalleryHolyShipRoute
+  '/order/thank-you': typeof OrderThankYouRoute
   '/api/admin/orders': typeof ApiAdminOrdersRouteWithChildren
+  '/api/orders/approve': typeof ApiOrdersApproveRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/admin/orders/$id/send-proof': typeof ApiAdminOrdersIdSendProofRoute
   '/api/admin/orders/$id/status': typeof ApiAdminOrdersIdStatusRoute
 }
 export interface FileRoutesById {
@@ -101,11 +142,16 @@ export interface FileRoutesById {
   '/install': typeof InstallRoute
   '/names': typeof NamesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/checkout': typeof ApiCheckoutRoute
   '/api/health': typeof ApiHealthRoute
   '/api/price': typeof ApiPriceRoute
   '/api/quote': typeof ApiQuoteRoute
   '/gallery/holy-ship': typeof GalleryHolyShipRoute
+  '/order/thank-you': typeof OrderThankYouRoute
   '/api/admin/orders': typeof ApiAdminOrdersRouteWithChildren
+  '/api/orders/approve': typeof ApiOrdersApproveRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/admin/orders/$id/send-proof': typeof ApiAdminOrdersIdSendProofRoute
   '/api/admin/orders/$id/status': typeof ApiAdminOrdersIdStatusRoute
 }
 export interface FileRouteTypes {
@@ -115,11 +161,16 @@ export interface FileRouteTypes {
     | '/install'
     | '/names'
     | '/sitemap.xml'
+    | '/api/checkout'
     | '/api/health'
     | '/api/price'
     | '/api/quote'
     | '/gallery/holy-ship'
+    | '/order/thank-you'
     | '/api/admin/orders'
+    | '/api/orders/approve'
+    | '/api/stripe/webhook'
+    | '/api/admin/orders/$id/send-proof'
     | '/api/admin/orders/$id/status'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -127,11 +178,16 @@ export interface FileRouteTypes {
     | '/install'
     | '/names'
     | '/sitemap.xml'
+    | '/api/checkout'
     | '/api/health'
     | '/api/price'
     | '/api/quote'
     | '/gallery/holy-ship'
+    | '/order/thank-you'
     | '/api/admin/orders'
+    | '/api/orders/approve'
+    | '/api/stripe/webhook'
+    | '/api/admin/orders/$id/send-proof'
     | '/api/admin/orders/$id/status'
   id:
     | '__root__'
@@ -139,11 +195,16 @@ export interface FileRouteTypes {
     | '/install'
     | '/names'
     | '/sitemap.xml'
+    | '/api/checkout'
     | '/api/health'
     | '/api/price'
     | '/api/quote'
     | '/gallery/holy-ship'
+    | '/order/thank-you'
     | '/api/admin/orders'
+    | '/api/orders/approve'
+    | '/api/stripe/webhook'
+    | '/api/admin/orders/$id/send-proof'
     | '/api/admin/orders/$id/status'
   fileRoutesById: FileRoutesById
 }
@@ -152,11 +213,15 @@ export interface RootRouteChildren {
   InstallRoute: typeof InstallRoute
   NamesRoute: typeof NamesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiCheckoutRoute: typeof ApiCheckoutRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiPriceRoute: typeof ApiPriceRoute
   ApiQuoteRoute: typeof ApiQuoteRoute
   GalleryHolyShipRoute: typeof GalleryHolyShipRoute
+  OrderThankYouRoute: typeof OrderThankYouRoute
   ApiAdminOrdersRoute: typeof ApiAdminOrdersRouteWithChildren
+  ApiOrdersApproveRoute: typeof ApiOrdersApproveRoute
+  ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -189,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/order/thank-you': {
+      id: '/order/thank-you'
+      path: '/order/thank-you'
+      fullPath: '/order/thank-you'
+      preLoaderRoute: typeof OrderThankYouRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/gallery/holy-ship': {
       id: '/gallery/holy-ship'
       path: '/gallery/holy-ship'
@@ -217,6 +289,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/checkout': {
+      id: '/api/checkout'
+      path: '/api/checkout'
+      fullPath: '/api/checkout'
+      preLoaderRoute: typeof ApiCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stripe/webhook': {
+      id: '/api/stripe/webhook'
+      path: '/api/stripe/webhook'
+      fullPath: '/api/stripe/webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/orders/approve': {
+      id: '/api/orders/approve'
+      path: '/api/orders/approve'
+      fullPath: '/api/orders/approve'
+      preLoaderRoute: typeof ApiOrdersApproveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/orders': {
       id: '/api/admin/orders'
       path: '/api/admin/orders'
@@ -231,14 +324,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminOrdersIdStatusRouteImport
       parentRoute: typeof ApiAdminOrdersRoute
     }
+    '/api/admin/orders/$id/send-proof': {
+      id: '/api/admin/orders/$id/send-proof'
+      path: '/$id/send-proof'
+      fullPath: '/api/admin/orders/$id/send-proof'
+      preLoaderRoute: typeof ApiAdminOrdersIdSendProofRouteImport
+      parentRoute: typeof ApiAdminOrdersRoute
+    }
   }
 }
 
 interface ApiAdminOrdersRouteChildren {
+  ApiAdminOrdersIdSendProofRoute: typeof ApiAdminOrdersIdSendProofRoute
   ApiAdminOrdersIdStatusRoute: typeof ApiAdminOrdersIdStatusRoute
 }
 
 const ApiAdminOrdersRouteChildren: ApiAdminOrdersRouteChildren = {
+  ApiAdminOrdersIdSendProofRoute: ApiAdminOrdersIdSendProofRoute,
   ApiAdminOrdersIdStatusRoute: ApiAdminOrdersIdStatusRoute,
 }
 
@@ -251,11 +353,15 @@ const rootRouteChildren: RootRouteChildren = {
   InstallRoute: InstallRoute,
   NamesRoute: NamesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiCheckoutRoute: ApiCheckoutRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiPriceRoute: ApiPriceRoute,
   ApiQuoteRoute: ApiQuoteRoute,
   GalleryHolyShipRoute: GalleryHolyShipRoute,
+  OrderThankYouRoute: OrderThankYouRoute,
   ApiAdminOrdersRoute: ApiAdminOrdersRouteWithChildren,
+  ApiOrdersApproveRoute: ApiOrdersApproveRoute,
+  ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
