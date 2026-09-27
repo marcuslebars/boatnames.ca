@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
+import { CATEGORIES } from "@/content/boat-names";
 import { SITE_URL } from "@/lib/site";
 
 // Computed once when the server module loads (≈ deploy time) so <lastmod> stays
@@ -14,7 +15,12 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/", changefreq: "weekly", priority: "1.0" },
           { path: "/install", changefreq: "monthly", priority: "0.8" },
           { path: "/gallery/holy-ship", changefreq: "yearly", priority: "0.6" },
-          { path: "/names", changefreq: "monthly", priority: "0.5" },
+          { path: "/names", changefreq: "monthly", priority: "0.7" },
+          ...CATEGORIES.map((c) => ({
+            path: `/names/${c.slug}`,
+            changefreq: "monthly",
+            priority: "0.6",
+          })),
         ];
         const xml = [
           `<?xml version="1.0" encoding="UTF-8"?>`,

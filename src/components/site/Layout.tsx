@@ -8,6 +8,7 @@ import { BoatnamesLogo } from "./BoatnamesLogo";
 const NAV = [
   { label: "DESIGN", to: "/", hash: "previewer" },
   { label: "PRODUCTS", to: "/", hash: "products" },
+  { label: "NAME IDEAS", to: "/names", hash: undefined },
   { label: "INSTALL", to: "/install", hash: undefined },
   { label: "GALLERY", to: "/gallery/holy-ship", hash: undefined },
 ] as const;
