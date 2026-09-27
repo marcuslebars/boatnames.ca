@@ -13,6 +13,7 @@ import {
 } from "@/components/site/previewer-types";
 import { parseConfig } from "@/components/site/previewer-url";
 import { SITE_URL } from "@/lib/site";
+import { FAQ_ITEMS, faqJsonLd } from "@/components/site/faq";
 
 const TITLE = "Custom Boat Name Lettering — Vinyl & Acrylic | boatnames.ca";
 const DESCRIPTION =
@@ -66,6 +67,14 @@ export const Route = createFileRoute("/")({
           "@context": "https://schema.org",
           "@graph": [
             {
+              "@type": "WebSite",
+              "@id": `${SITE_URL}/#website`,
+              name: "boatnames.ca",
+              url: CANONICAL,
+              inLanguage: "en-CA",
+              publisher: { "@id": `${SITE_URL}/#org` },
+            },
+            {
               "@type": "Organization",
               "@id": `${SITE_URL}/#org`,
               name: "boatnames.ca",
@@ -76,8 +85,12 @@ export const Route = createFileRoute("/")({
                 name: "A1 Marine Care",
                 url: "https://a1marinecare.ca",
               },
+              logo: `${SITE_URL}/images/boatnames-logo.svg`,
+              email: "hello@boatnames.ca",
+              telephone: "+1-705-996-2001",
               sameAs: ["https://a1marinecare.ca", "https://a1marinestorage.ca"],
             },
+            { ...faqJsonLd(), "@id": `${SITE_URL}/#faq` },
             {
               "@type": "Product",
               name: "Cast Acrylic Boat Name Lettering",
@@ -496,6 +509,26 @@ function Index() {
             </span>
           </div>
         </Link>
+      </Section>
+
+      {/* FAQ — same source as the FAQPage JSON-LD above */}
+      <Section id="faq" eyebrow="QUESTIONS" title="Before you order.">
+        <div className="max-w-3xl divide-y divide-[color:var(--wake)]/15 border-y border-[color:var(--wake)]/15">
+          {FAQ_ITEMS.map((item) => (
+            <details key={item.q} className="group py-5">
+              <summary className="flex cursor-pointer list-none items-start justify-between gap-6 font-sans text-lg font-semibold tracking-tight marker:hidden focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[color:var(--polish)]">
+                <h3 className="text-left">{item.q}</h3>
+                <span
+                  aria-hidden="true"
+                  className="mt-1 font-mono text-sm text-[color:var(--polish)] transition group-open:rotate-45"
+                >
+                  +
+                </span>
+              </summary>
+              <p className="mt-3 max-w-2xl text-[color:var(--gelcoat)]/75">{item.a}</p>
+            </details>
+          ))}
+        </div>
       </Section>
 
       {/* QUOTE */}
