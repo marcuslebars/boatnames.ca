@@ -207,15 +207,23 @@ describe("forwardToEverdoer is gated, additive, best-effort (mirrors the sibling
     expect(res.outcome).toBe("sent");
   });
 
-  it("sends ONLY the new x-everdoer-* header names", async () => {
+  it("sends x-everdoer-signature, plus x-empirevu-signature with the identical value", async () => {
     process.env.EVERDOER_INTAKE_URL = "https://api.everdoer.com/api/intake";
     process.env.EVERDOER_INTAKE_SECRET = "s";
     const spy: FetchSpy = okFetch();
     globalThis.fetch = spy as never;
     await forwardToEverdoer(envelope);
-    const headers = spy.mock.calls[0][1].headers as Record<string, string>;
-    expect(Object.keys(headers).sort()).toEqual(["Content-Type", "x-everdoer-signature"]);
+    const [, opts] = spy.mock.calls[0];
+    const headers = opts.headers as Record<string, string>;
+    // Rebrand shim (remove after one release once EVERDOER_* is set): old header kept.
+    expect(Object.keys(headers).sort()).toEqual([
+      "Content-Type",
+      "x-empirevu-signature",
+      "x-everdoer-signature",
+    ]);
+    expect(headers["x-everdoer-signature"]).toBe(signEverdoerBody(opts.body as string, "s"));
     expect(headers["x-everdoer-signature"]).toMatch(/^sha256=[0-9a-f]{64}$/);
+    expect(headers["x-empirevu-signature"]).toBe(headers["x-everdoer-signature"]);
   });
 
   it("never throws when the endpoint fails, and reports failed", async () => {
@@ -247,15 +255,50 @@ describe("forwardToEverdoer is gated, additive, best-effort (mirrors the sibling
       expect(warn).not.toHaveBeenCalled();
     });
 
-    it("a new kill switch wins too (EVERDOER_INTAKE_DISABLED=1 over legacy unset)", async () => {
-      process.env.EMPIREVU_INTAKE_URL = "https://legacy.example/api/intake";
-      process.env.EMPIREVU_INTAKE_SECRET = "old-secret";
+    it("the new kill switch alone gates the forward", async () => {
+      process.env.EVERDOER_INTAKE_URL = "https://api.everdoer.com/api/intake";
+      process.env.EVERDOER_INTAKE_SECRET = "s";
       process.env.EVERDOER_INTAKE_DISABLED = "1";
+      const spy = vi.fn();
+      globalThis.fetch = spy as never;
+      expect((await forwardToEverdoer(envelope)).outcome).toBe("skipped_gated");
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it("kill switch fails safe: new 0 + old 1 -> skipped (no precedence for an enable)", async () => {
+      process.env.EVERDOER_INTAKE_URL = "https://api.everdoer.com/api/intake";
+      process.env.EVERDOER_INTAKE_SECRET = "s";
+      process.env.EVERDOER_INTAKE_DISABLED = "0";
+      process.env.EMPIREVU_INTAKE_DISABLED = "1";
       vi.spyOn(console, "warn").mockImplementation(() => {});
       const spy = vi.fn();
       globalThis.fetch = spy as never;
       expect((await forwardToEverdoer(envelope)).outcome).toBe("skipped_gated");
       expect(spy).not.toHaveBeenCalled();
+    });
+
+    it("kill switch fails safe: new 1 + old 0 -> skipped", async () => {
+      process.env.EVERDOER_INTAKE_URL = "https://api.everdoer.com/api/intake";
+      process.env.EVERDOER_INTAKE_SECRET = "s";
+      process.env.EVERDOER_INTAKE_DISABLED = "1";
+      process.env.EMPIREVU_INTAKE_DISABLED = "0";
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const spy = vi.fn();
+      globalThis.fetch = spy as never;
+      expect((await forwardToEverdoer(envelope)).outcome).toBe("skipped_gated");
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it("forwards only when neither name is 1 (new 0 + old 0 -> sent)", async () => {
+      process.env.EVERDOER_INTAKE_URL = "https://api.everdoer.com/api/intake";
+      process.env.EVERDOER_INTAKE_SECRET = "s";
+      process.env.EVERDOER_INTAKE_DISABLED = "0";
+      process.env.EMPIREVU_INTAKE_DISABLED = "0";
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const spy: FetchSpy = okFetch();
+      globalThis.fetch = spy as never;
+      expect((await forwardToEverdoer(envelope)).outcome).toBe("sent");
+      expect(spy).toHaveBeenCalledTimes(1);
     });
 
     it("the legacy kill switch alone still gates the forward (deployed config keeps working)", async () => {
@@ -284,7 +327,8 @@ describe("forwardToEverdoer is gated, additive, best-effort (mirrors the sibling
       const [url, opts] = spy.mock.calls[0];
       expect(url).toBe("https://legacy.example/api/intake");
       const headers = opts.headers as Record<string, string>;
-      // Even on legacy env, only the new header name is sent.
+      // Legacy env changes nothing about the signing: same headers, same value.
+      expect(headers["x-empirevu-signature"]).toBe(headers["x-everdoer-signature"]);
       expect(headers["x-everdoer-signature"]).toBe(
         signEverdoerBody(opts.body as string, "old-secret"),
       );

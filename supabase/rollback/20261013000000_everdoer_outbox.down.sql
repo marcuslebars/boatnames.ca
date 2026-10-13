@@ -14,14 +14,28 @@
 
 begin;
 
-drop view if exists public.empirevu_outbox;
-
-alter table public.everdoer_outbox rename to empirevu_outbox;
-
+-- Every step is guarded, so running this twice is a no-op the second time.
 do $$
 declare
   r record;
 begin
+  -- Drop the compat VIEW only (never a table that happens to have the old name).
+  if exists (
+    select 1 from pg_class
+    where oid = to_regclass('public.empirevu_outbox') and relkind = 'v'
+  ) then
+    drop view public.empirevu_outbox;
+  end if;
+
+  if to_regclass('public.empirevu_outbox') is null then
+    if to_regclass('public.everdoer_outbox') is not null then
+      alter table public.everdoer_outbox rename to empirevu_outbox;
+    else
+      raise exception 'neither public.empirevu_outbox nor public.everdoer_outbox exists';
+    end if;
+  end if;
+
+  -- Each rename below only fires for a name that still carries the new prefix.
   for r in
     select conname
     from pg_constraint

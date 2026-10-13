@@ -82,11 +82,16 @@ to delete). **Present + in use:** `transom-preview-base.jpg` (previewer base),
 ## 4. Supabase (the leads backend)
 
 1. Create/choose a Supabase project.
-2. Apply the migrations in order (`supabase db push`, or paste into the SQL editor):
+2. Apply the migrations in order (`supabase db push`, or paste into the SQL editor). A fresh
+   project can instead run `docs/supabase-setup.sql` once, which already equals every migration
+   through `20261013000000` (outbox named `everdoer_outbox`): then skip the migrations below.
    - `20260725000000_holyship_quote_backend.sql` — tables, enums, private `quote-photos` bucket.
    - `20260727000000_boatnames_tier_fields.sql` — `product_line` + `fulfillment` columns.
    - `20260727000100_outbox_superseded_status.sql` — adds the `superseded` outbox status.
    - `20260727000200_supersede_holyship_outbox.sql` — retires any stale holyship-shaped outbox rows.
+   - `20260728000000_orders_domain.sql` — `orders` + `order_events`.
+   - `20260729000000_outbox_order_id.sql` — outbox rows can reference an order.
+   - `20260729000100_orders_tracking.sql` — shipment tracking on orders.
    - `20261013000000_everdoer_outbox.sql` — renames the outbox to `everdoer_outbox` (leaves a
      compat view under the old name; rollback in `supabase/rollback/`).
 3. Confirm the `quote-photos` bucket exists and is **private**.
@@ -130,7 +135,8 @@ default. To enable, in order:
    it). **Sequencing:** deploy + seed BEFORE flipping the gate, or leads land in `raw_leads`.
    (`docs/everdoer-seed-a1-boatnames.sql` here is a reference copy of that seed.)
 3. Set `EVERDOER_INTAKE_URL=https://api.everdoer.com/api/intake` + `EVERDOER_INTAKE_SECRET`;
-   remove `EVERDOER_INTAKE_DISABLED=1`.
+   remove BOTH `EVERDOER_INTAKE_DISABLED` and `EMPIREVU_INTAKE_DISABLED` (while the rebrand
+   fallback exists, either one set to `1` keeps the forward off).
 4. Replay the accumulated envelopes: `bun scripts/replay-outbox.ts skipped_gated` — diff a batch
    against the fixtures first; each should resolve to a CRM contact, not `raw_leads`. Rows written
    under the old holyship shape are already marked `superseded` (migration

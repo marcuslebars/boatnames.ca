@@ -28,14 +28,31 @@
 -- FOLLOW-UP (separate later migration, once the rebranded code is deployed and
 -- nothing uses the old name): drop view if exists public.empirevu_outbox;
 --
+-- Re-runnable: every step is guarded, so applying it twice (or on a project
+-- bootstrapped from docs/supabase-setup.sql, which already has everdoer_outbox)
+-- is a no-op apart from (re)creating the compat view.
+--
 -- Rollback: supabase/rollback/20261013000000_everdoer_outbox.down.sql
 
-alter table public.empirevu_outbox rename to everdoer_outbox;
+begin;
 
 do $$
 declare
   r record;
 begin
+  -- Rename only if it hasn't happened yet and the old name is still the TABLE.
+  if to_regclass('public.everdoer_outbox') is null then
+    if exists (
+      select 1 from pg_class
+      where oid = to_regclass('public.empirevu_outbox') and relkind = 'r'
+    ) then
+      alter table public.empirevu_outbox rename to everdoer_outbox;
+    else
+      raise exception 'neither public.everdoer_outbox nor table public.empirevu_outbox exists';
+    end if;
+  end if;
+
+  -- Each rename below only fires for a name that still carries the old prefix.
   -- Constraints first: renaming a PK/UNIQUE constraint renames its index too.
   for r in
     select conname
@@ -69,7 +86,7 @@ end $$;
 -- Compat view under the old name. A single-table SELECT * is auto-updatable, so
 -- INSERT ... RETURNING / UPDATE / DELETE through it hit the table, and columns
 -- the caller omits take the table's defaults (id, status, attempts, created_at).
-create view public.empirevu_outbox
+create or replace view public.empirevu_outbox
 with (security_invoker = true)
 as select * from public.everdoer_outbox;
 
@@ -111,3 +128,5 @@ end $$;
 
 -- Ask PostgREST (Supabase API) to pick up the renamed table + view right away.
 notify pgrst, 'reload schema';
+
+commit;

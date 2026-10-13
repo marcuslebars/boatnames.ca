@@ -10,7 +10,7 @@
  * fixtures before flipping the gate on for the first time.
  */
 import type { LeadEnvelope } from "../src/server/everdoer";
-import { forwardAndMark } from "../src/server/outbox";
+import { forwardAndMark, withOutboxTable } from "../src/server/outbox";
 import { supabaseAdmin } from "../src/server/supabase";
 
 async function main() {
@@ -18,12 +18,14 @@ async function main() {
   const limit = Number(process.argv[3] ?? "500");
   const admin = supabaseAdmin();
 
-  const { data, error } = await admin
-    .from("everdoer_outbox")
-    .select("id, envelope")
-    .eq("status", status)
-    .order("created_at", { ascending: true })
-    .limit(limit);
+  const { data, error } = await withOutboxTable((table) =>
+    admin
+      .from(table)
+      .select("id, envelope")
+      .eq("status", status)
+      .order("created_at", { ascending: true })
+      .limit(limit),
+  );
 
   if (error) {
     console.error("query failed:", error.message);

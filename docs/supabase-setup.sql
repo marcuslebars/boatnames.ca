@@ -4,7 +4,10 @@
 -- It is the END STATE of supabase/migrations/*.sql, consolidated (outbox_status
 -- already includes 'superseded', so there is no ALTER TYPE ADD VALUE transaction
 -- gotcha). Use THIS *or* the CLI (`supabase db push`), never both — mixing them
--- causes "already exists" errors.
+-- causes "already exists" errors. A project bootstrapped from this file is at
+-- the state of every migration up to and including 20261013000000 (minus that
+-- migration's compat view, which only serves pre-rebrand code): don't run those
+-- migrations on it. (20261013000000 is guarded, so running it anyway is harmless.)
 --
 -- Service role is the sole writer; RLS on with no policies. After running this,
 -- set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY on the host and hit
@@ -77,21 +80,6 @@ create table public.quote_rate_limits (
 );
 create index quote_rate_limits_ip_created_idx on public.quote_rate_limits (ip, created_at desc);
 
--- ── Everdoer forward outbox ───────────────────────────────────────────────────
-create table public.everdoer_outbox (
-  id uuid primary key default gen_random_uuid(),
-  quote_request_id uuid not null references public.quote_requests (id) on delete cascade,
-  idempotency_key text not null unique,
-  envelope jsonb not null,
-  status public.outbox_status not null default 'pending',
-  attempts integer not null default 0,
-  last_error text,
-  response_status integer,
-  created_at timestamptz not null default timezone('utc', now()),
-  sent_at timestamptz
-);
-create index everdoer_outbox_status_idx on public.everdoer_outbox (status, created_at desc);
-
 -- ── Orders (Phase 8 checkout seam — inert until CHECKOUT_ENABLED=1) ────────────
 create table public.orders (
   id uuid primary key default gen_random_uuid(),
@@ -123,7 +111,9 @@ create table public.orders (
   external_payment_ref text,
   status public.order_status not null default 'draft',
   created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  updated_at timestamptz not null default timezone('utc', now()),
+  tracking_number text,
+  carrier text
 );
 create index orders_status_idx on public.orders (status, created_at desc);
 create index orders_quote_idx on public.orders (quote_request_id);
@@ -138,6 +128,30 @@ create table public.order_events (
   created_at timestamptz not null default timezone('utc', now())
 );
 create index order_events_order_idx on public.order_events (order_id, created_at);
+
+-- ── Everdoer forward outbox ───────────────────────────────────────────────────
+-- Holds quote AND paid-order envelopes; a row references exactly one of the two.
+-- (Migrations create this as empirevu_outbox and rename it in 20261013000000; a
+-- project bootstrapped from this file already has the final name.)
+create table public.everdoer_outbox (
+  id uuid primary key default gen_random_uuid(),
+  quote_request_id uuid references public.quote_requests (id) on delete cascade,
+  idempotency_key text not null unique,
+  envelope jsonb not null,
+  status public.outbox_status not null default 'pending',
+  attempts integer not null default 0,
+  last_error text,
+  response_status integer,
+  created_at timestamptz not null default timezone('utc', now()),
+  sent_at timestamptz,
+  order_id uuid references public.orders (id) on delete cascade,
+  constraint everdoer_outbox_one_source_chk check (
+    (quote_request_id is not null and order_id is null)
+    or (quote_request_id is null and order_id is not null)
+  )
+);
+create index everdoer_outbox_status_idx on public.everdoer_outbox (status, created_at desc);
+create index everdoer_outbox_order_idx on public.everdoer_outbox (order_id);
 
 -- ── Private storage bucket for transom photos ─────────────────────────────────
 insert into storage.buckets (id, name, public)

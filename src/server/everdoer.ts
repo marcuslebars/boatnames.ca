@@ -19,8 +19,8 @@
  *
  * signEverdoerBody + forwardToEverdoer are copied VERBATIM from the Care spoke —
  * do not rewrite the signing or transport. (Only the names changed in the
- * Everdoer rebrand: the header is x-everdoer-signature and the env vars are
- * EVERDOER_*, read via the legacy-name fallback in ./env.)
+ * Everdoer rebrand: the header is x-everdoer-signature, plus the old name for one
+ * release, and the env vars are EVERDOER_*, read via the legacy fallback in ./env.)
  */
 import { createHmac } from "node:crypto";
 
@@ -246,15 +246,16 @@ export interface ForwardResult {
  * submission still builds + persists the envelope (outbox) but makes no call.
  *
  * Returns the outcome so the caller can mark the outbox row. The transport
- * (rawBody = JSON.stringify(envelope), x-everdoer-signature, retry/backoff) is
+ * (rawBody = JSON.stringify(envelope), signature header, retry/backoff) is
  * the sibling implementation verbatim.
  */
 export async function forwardToEverdoer(
   envelope: LeadEnvelope,
   attempts = 3,
 ): Promise<ForwardResult> {
-  // Gate semantics unchanged by the rebrand: kill switch === "1", else URL +
-  // secret must both be set. Each reads EVERDOER_* first, then the legacy name (see ./env).
+  // Gate semantics unchanged by the rebrand: kill switch === "1" (under either
+  // name, see ./env), else URL + secret must both be set (EVERDOER_* first, then
+  // the legacy name).
   if (serverEnv.everdoerDisabled()) {
     return { outcome: "skipped_gated", attempts: 0 };
   }
@@ -267,9 +268,14 @@ export async function forwardToEverdoer(
     return { outcome: "skipped_gated", attempts: 0 };
   }
   const rawBody = JSON.stringify(envelope);
+  const signature = signEverdoerBody(rawBody, secret);
   const headers = {
     "Content-Type": "application/json",
-    "x-everdoer-signature": signEverdoerBody(rawBody, secret),
+    "x-everdoer-signature": signature,
+    // Old header name with the identical value, so intake never depends on the
+    // platform's x-everdoer-* support staying deployed (it reads the new one first).
+    // Rebrand shim (remove after one release once EVERDOER_* is set)
+    "x-empirevu-signature": signature,
   };
 
   let lastError: string | undefined;

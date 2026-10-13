@@ -29,6 +29,14 @@ const warnedLegacyEnv = new Set<string>();
 export function envWithLegacyFallback(name: string, legacyName: string): string | undefined {
   const v = optional(name);
   if (v !== undefined) return v;
+  return legacyEnv(name, legacyName);
+}
+
+/**
+ * Read the legacy (EMPIREVU_*) var itself, warning once per process if it is set.
+ * Rebrand shim (remove after one release once EVERDOER_* is set)
+ */
+function legacyEnv(name: string, legacyName: string): string | undefined {
   const legacy = optional(legacyName);
   if (legacy !== undefined && !warnedLegacyEnv.has(legacyName)) {
     warnedLegacyEnv.add(legacyName);
@@ -62,8 +70,12 @@ export const serverEnv = {
   everdoerIntakeUrl: () => envWithLegacyFallback("EVERDOER_INTAKE_URL", "EMPIREVU_INTAKE_URL"),
   everdoerIntakeSecret: () =>
     envWithLegacyFallback("EVERDOER_INTAKE_SECRET", "EMPIREVU_INTAKE_SECRET"),
+  // Kill switch fails SAFE while the shim exists: "1" under EITHER name disables
+  // the forward, so a leftover legacy kill switch is never overridden by a new "0".
+  // Rebrand shim (remove after one release once EVERDOER_* is set)
   everdoerDisabled: () =>
-    envWithLegacyFallback("EVERDOER_INTAKE_DISABLED", "EMPIREVU_INTAKE_DISABLED") === "1",
+    optional("EVERDOER_INTAKE_DISABLED") === "1" ||
+    legacyEnv("EVERDOER_INTAKE_DISABLED", "EMPIREVU_INTAKE_DISABLED") === "1",
 
   // Checkout seam (Phase 8) — server-only, inert unless CHECKOUT_ENABLED=1.
   // Which adapter resolves order amounts ("manual" = always unpriced; "engine" =
