@@ -1,10 +1,10 @@
 /**
- * boatnames.ca → EmpireVu lead forward.
+ * boatnames.ca → Everdoer lead forward.
  *
- * boatnames.ca is a NEW EmpireVu company (slug `a1-boatnames`) under the
+ * boatnames.ca is a NEW Everdoer company (slug `a1-boatnames`) under the
  * `a1-group` org — NOT a service line of a1-marine-care. The intake resolves the
  * company from `sourceSite` at lead time, so sourceSite is "boatnames" and the
- * a1-boatnames company MUST be seeded in the EmpireVu repo before the gate flips
+ * a1-boatnames company MUST be seeded in the Everdoer repo before the gate flips
  * (a lead arriving first lands in raw_leads instead of matching a contact). The
  * `source` tag splits by intent (boatnames_quote_ship / _install / _unsure) for
  * attribution. The envelope shape is the shared contract (leadEnvelopeSchema);
@@ -17,10 +17,14 @@
  * record stays only in boatnames' own quote_requests, never invented into the
  * envelope.
  *
- * signEmpireVuBody + forwardToEmpireVu are copied VERBATIM from the Care spoke —
- * do not rewrite the signing or transport.
+ * signEverdoerBody + forwardToEverdoer are copied VERBATIM from the Care spoke —
+ * do not rewrite the signing or transport. (Only the names changed in the
+ * Everdoer rebrand: the header is x-everdoer-signature and the env vars are
+ * EVERDOER_*, read via the legacy-name fallback in ./env.)
  */
 import { createHmac } from "node:crypto";
+
+import { serverEnv } from "./env";
 
 export interface LeadLineItem {
   description: string;
@@ -99,7 +103,7 @@ const FULFILLMENT_LABEL: Record<string, string> = {
 /**
  * Fold the product line, fulfillment, design, and links into the one free-text
  * field the contract preserves. The intake stores `message` on the contact +
- * activity + notification, so this is where the team reads the details in EmpireVu.
+ * activity + notification, so this is where the team reads the details in Everdoer.
  */
 function buildMessage(lead: BoatnamesLead): string | undefined {
   const product = lead.line === "vinyl" ? "Cut vinyl" : "Cast acrylic";
@@ -157,7 +161,7 @@ export function buildBoatnamesEnvelope(lead: BoatnamesLead, receivedAt: string):
 // amount ride the free-text `message` (the extension point); the distinct
 // `source` tag "boatnames_order_paid" separates orders from quotes for reporting.
 // Cross-repo: the a1-boatnames company + an order fixture must be synced in the
-// EmpireVu intake before this goes live (same gate as the quote forward).
+// Everdoer intake before this goes live (same gate as the quote forward).
 
 export function boatnamesOrderSource(): string {
   return "boatnames_order_paid";
@@ -223,7 +227,7 @@ export function buildBoatnamesOrderEnvelope(
 
 // ── HMAC + transport — copied VERBATIM from the Care spoke ────────────────────
 
-export function signEmpireVuBody(rawBody: string, secret: string): string {
+export function signEverdoerBody(rawBody: string, secret: string): string {
   return `sha256=${createHmac("sha256", secret).update(rawBody, "utf8").digest("hex")}`;
 }
 
@@ -237,33 +241,35 @@ export interface ForwardResult {
 }
 
 /**
- * Fan out an envelope to EmpireVu's /api/intake. Never throws. Skips cleanly if
+ * Fan out an envelope to Everdoer's /api/intake. Never throws. Skips cleanly if
  * unconfigured or disabled. In THIS repo the gate defaults to disabled, so a
  * submission still builds + persists the envelope (outbox) but makes no call.
  *
  * Returns the outcome so the caller can mark the outbox row. The transport
- * (rawBody = JSON.stringify(envelope), x-empirevu-signature, retry/backoff) is
+ * (rawBody = JSON.stringify(envelope), x-everdoer-signature, retry/backoff) is
  * the sibling implementation verbatim.
  */
-export async function forwardToEmpireVu(
+export async function forwardToEverdoer(
   envelope: LeadEnvelope,
   attempts = 3,
 ): Promise<ForwardResult> {
-  if (process.env.EMPIREVU_INTAKE_DISABLED === "1") {
+  // Gate semantics unchanged by the rebrand: kill switch === "1", else URL +
+  // secret must both be set. Each reads EVERDOER_* first, then the legacy name (see ./env).
+  if (serverEnv.everdoerDisabled()) {
     return { outcome: "skipped_gated", attempts: 0 };
   }
-  const url = process.env.EMPIREVU_INTAKE_URL;
-  const secret = process.env.EMPIREVU_INTAKE_SECRET;
+  const url = serverEnv.everdoerIntakeUrl();
+  const secret = serverEnv.everdoerIntakeSecret();
   if (!url || !secret) {
     console.log(
-      "[empirevu] EMPIREVU_INTAKE_URL/SECRET not set — skipping (durable log + outbox unaffected)",
+      "[everdoer] EVERDOER_INTAKE_URL/SECRET not set — skipping (durable log + outbox unaffected)",
     );
     return { outcome: "skipped_gated", attempts: 0 };
   }
   const rawBody = JSON.stringify(envelope);
   const headers = {
     "Content-Type": "application/json",
-    "x-empirevu-signature": signEmpireVuBody(rawBody, secret),
+    "x-everdoer-signature": signEverdoerBody(rawBody, secret),
   };
 
   let lastError: string | undefined;
@@ -273,21 +279,21 @@ export async function forwardToEmpireVu(
       const res = await fetch(url, { method: "POST", headers, body: rawBody });
       if (res.ok) {
         console.log(
-          `[empirevu] forwarded ${envelope.formType} (attempt ${attempt}, ${res.status})`,
+          `[everdoer] forwarded ${envelope.formType} (attempt ${attempt}, ${res.status})`,
         );
         return { outcome: "sent", status: res.status, attempts: attempt };
       }
       lastStatus = res.status;
       lastError = `intake responded ${res.status}`;
-      console.error(`[empirevu] responded ${res.status} (attempt ${attempt})`);
+      console.error(`[everdoer] responded ${res.status} (attempt ${attempt})`);
     } catch (err) {
       lastError = err instanceof Error ? err.message : String(err);
-      console.error(`[empirevu] forward failed (attempt ${attempt}):`, lastError);
+      console.error(`[everdoer] forward failed (attempt ${attempt}):`, lastError);
     }
     if (attempt < attempts) await sleep(attempt * 750);
   }
   console.error(
-    `[empirevu] gave up after ${attempts} attempts — durable log + outbox still hold the lead`,
+    `[everdoer] gave up after ${attempts} attempts — durable log + outbox still hold the lead`,
   );
   return { outcome: "failed", status: lastStatus, error: lastError, attempts };
 }

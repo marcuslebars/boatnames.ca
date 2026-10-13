@@ -4,7 +4,7 @@ import type Stripe from "stripe";
 
 import { canTransition, type OrderStatus } from "@/components/site/order-schema";
 
-import { buildBoatnamesOrderEnvelope } from "./empirevu";
+import { buildBoatnamesOrderEnvelope } from "./everdoer";
 import { sendEmail, sendLeadNotification } from "./email";
 import { serverEnv } from "./env";
 import { newOrderNotification, orderConfirmationEmail, proofReadyEmail } from "./order-emails";
@@ -219,7 +219,7 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
     console.error("[webhook] confirmation email failed:", e); // non-blocking
   }
 
-  // Phase 5: forward the paid order to EmpireVu (durable outbox + gated forward)
+  // Phase 5: forward the paid order to Everdoer (durable outbox + gated forward)
   // and notify the A1 inbox. Both non-blocking — the payment is already recorded.
   const shipTo = [patch.ship_city, patch.ship_province].filter(Boolean).join(", ");
   try {

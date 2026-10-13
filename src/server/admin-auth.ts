@@ -22,7 +22,7 @@ function safeEqual(a: string, b: string): boolean {
  * These responses carry NO `Access-Control-Allow-Origin`, and the routes define
  * no OPTIONS handler, so a cross-origin browser call is blocked by the browser
  * (preflight fails / response unreadable). curl and server-to-server callers
- * (EmpireVu) are unaffected.
+ * (Everdoer) are unaffected.
  */
 export function authorizeAdmin(request: Request): AdminAuthResult {
   if (!serverEnv.checkoutEnabled()) return { ok: false, status: 404, error: "Not found." };

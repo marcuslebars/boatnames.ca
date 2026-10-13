@@ -8,7 +8,7 @@ import {
 } from "@/components/site/quote-schema";
 
 import { sendLeadNotification } from "./email";
-import { buildBoatnamesEnvelope, type BoatnamesLead } from "./empirevu";
+import { buildBoatnamesEnvelope, type BoatnamesLead } from "./everdoer";
 import type { SniffedImageType } from "./magic-bytes";
 import { forwardAndMark, insertOutbox } from "./outbox";
 import { checkRateLimit } from "./rate-limit";
@@ -71,7 +71,7 @@ async function markRaw(
  * Orchestrate a quote submission. Order is deliberate (never lose a lead):
  * raw capture -> bot filters (silent 200) -> validate -> rate limit -> upload ->
  * DURABLE lead + outbox insert -> return success -> non-blocking email + gated
- * EmpireVu forward.
+ * Everdoer forward.
  */
 export async function handleQuoteSubmission(sub: QuoteSubmission): Promise<QuoteOutcome> {
   const admin = supabaseAdmin();

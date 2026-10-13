@@ -3,7 +3,7 @@
  *
  * NONE of these carry the VITE_ prefix, so Vite never inlines them into the
  * browser bundle. Import this only from server code (routes/api, src/server/*).
- * The database URL, service-role key, Resend key, and EmpireVu secret are secrets
+ * The database URL, service-role key, Resend key, and Everdoer secret are secrets
  * and must never gain a VITE_ prefix.
  */
 function required(name: string): string {
@@ -15,6 +15,31 @@ function required(name: string): string {
 function optional(name: string): string | undefined {
   const v = process.env[name];
   return v && v.length > 0 ? v : undefined;
+}
+
+// Rebrand shim (remove after one release once EVERDOER_* is set)
+// Legacy names already warned about in this process, so each warns exactly once.
+const warnedLegacyEnv = new Set<string>();
+
+/**
+ * Read `name` (an EVERDOER_* var); if it is unset or empty, fall back to the
+ * pre-rebrand `legacyName` (EMPIREVU_*) and log a single warning per process.
+ * Rebrand shim (remove after one release once EVERDOER_* is set)
+ */
+export function envWithLegacyFallback(name: string, legacyName: string): string | undefined {
+  const v = optional(name);
+  if (v !== undefined) return v;
+  const legacy = optional(legacyName);
+  if (legacy !== undefined && !warnedLegacyEnv.has(legacyName)) {
+    warnedLegacyEnv.add(legacyName);
+    console.warn(`[everdoer] using legacy env ${legacyName}; set ${name}`);
+  }
+  return legacy;
+}
+
+/** Test-only: forget which legacy vars have warned, so each test starts clean. */
+export function resetLegacyEnvWarningsForTests(): void {
+  warnedLegacyEnv.clear();
 }
 
 export const serverEnv = {
@@ -32,10 +57,13 @@ export const serverEnv = {
   orderFromEmail: () => optional("ORDER_FROM_EMAIL") ?? "orders@boatnames.ca",
   orderNotifyEmail: () => optional("ORDER_NOTIFY_EMAIL") ?? "hello@boatnames.ca",
 
-  // EmpireVu forward (gated OFF by default in this repo)
-  empirevuIntakeUrl: () => optional("EMPIREVU_INTAKE_URL"),
-  empirevuIntakeSecret: () => optional("EMPIREVU_INTAKE_SECRET"),
-  empirevuDisabled: () => process.env.EMPIREVU_INTAKE_DISABLED === "1",
+  // Everdoer forward (gated OFF by default in this repo). Each reads EVERDOER_*
+  // first, then the legacy name. Rebrand shim (remove after one release once EVERDOER_* is set)
+  everdoerIntakeUrl: () => envWithLegacyFallback("EVERDOER_INTAKE_URL", "EMPIREVU_INTAKE_URL"),
+  everdoerIntakeSecret: () =>
+    envWithLegacyFallback("EVERDOER_INTAKE_SECRET", "EMPIREVU_INTAKE_SECRET"),
+  everdoerDisabled: () =>
+    envWithLegacyFallback("EVERDOER_INTAKE_DISABLED", "EMPIREVU_INTAKE_DISABLED") === "1",
 
   // Checkout seam (Phase 8) — server-only, inert unless CHECKOUT_ENABLED=1.
   // Which adapter resolves order amounts ("manual" = always unpriced; "engine" =

@@ -77,8 +77,8 @@ create table public.quote_rate_limits (
 );
 create index quote_rate_limits_ip_created_idx on public.quote_rate_limits (ip, created_at desc);
 
--- ── EmpireVu forward outbox ───────────────────────────────────────────────────
-create table public.empirevu_outbox (
+-- ── Everdoer forward outbox ───────────────────────────────────────────────────
+create table public.everdoer_outbox (
   id uuid primary key default gen_random_uuid(),
   quote_request_id uuid not null references public.quote_requests (id) on delete cascade,
   idempotency_key text not null unique,
@@ -90,7 +90,7 @@ create table public.empirevu_outbox (
   created_at timestamptz not null default timezone('utc', now()),
   sent_at timestamptz
 );
-create index empirevu_outbox_status_idx on public.empirevu_outbox (status, created_at desc);
+create index everdoer_outbox_status_idx on public.everdoer_outbox (status, created_at desc);
 
 -- ── Orders (Phase 8 checkout seam — inert until CHECKOUT_ENABLED=1) ────────────
 create table public.orders (
@@ -148,6 +148,6 @@ on conflict (id) do nothing;
 alter table public.quote_requests enable row level security;
 alter table public.raw_submissions enable row level security;
 alter table public.quote_rate_limits enable row level security;
-alter table public.empirevu_outbox enable row level security;
+alter table public.everdoer_outbox enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_events enable row level security;

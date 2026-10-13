@@ -87,6 +87,8 @@ to delete). **Present + in use:** `transom-preview-base.jpg` (previewer base),
    - `20260727000000_boatnames_tier_fields.sql` — `product_line` + `fulfillment` columns.
    - `20260727000100_outbox_superseded_status.sql` — adds the `superseded` outbox status.
    - `20260727000200_supersede_holyship_outbox.sql` — retires any stale holyship-shaped outbox rows.
+   - `20261013000000_everdoer_outbox.sql` — renames the outbox to `everdoer_outbox` (leaves a
+     compat view under the old name; rollback in `supabase/rollback/`).
 3. Confirm the `quote-photos` bucket exists and is **private**.
 
 ## 5. Environment variables (see `.env.example`)
@@ -104,30 +106,31 @@ Public: `VITE_SITE_URL` = the production origin (defaults to `https://boatnames.
 - After deploy, hit `GET /api/health` — expect `{"ok":true,"db":"ok"}`.
 - Submit a real test quote (once) per tier — a ship-tier vinyl and an install-tier
   acrylic — and confirm each writes a `quote_requests` row with the correct
-  `product_line` + `fulfillment`, a `skipped_gated` `empirevu_outbox` row with a
+  `product_line` + `fulfillment`, a `skipped_gated` `everdoer_outbox` row with a
   schema-valid envelope under `sourceSite: boatnames`, and the notification email.
 
-## 7. EmpireVu forward — stays OFF until you flip it
+## 7. Everdoer forward — stays OFF until you flip it
 
-boatnames.ca forwards as a **new EmpireVu company**: slug `a1-boatnames` under the `a1-group`
+boatnames.ca forwards as a **new Everdoer company**: slug `a1-boatnames` under the `a1-group`
 org (NOT a service line of a1-marine-care). Envelope: `sourceSite: boatnames`, `source:
 boatnames_quote_ship | _install | _unsure`, `formType: quote`. The forward is gated off by
 default. To enable, in order:
 
-   **The EmpireVu-side work is already done — on an unmerged branch.** In syncoree,
+   **The Everdoer-side work is already done — on an unmerged branch.** In everdoer,
    branch `feat/boatnames-company-intake` (commit `75850c4`) contains: the `sourceSite ->
    company` routing map (`src/server/services/lead-intake/routing.ts`,
    `SOURCE_SITE_TO_COMPANY_SLUG["boatnames"] = "a1-boatnames"` — a CODE map, not a DB column),
    the seed `supabase/seeds/a1-boatnames.sql`, the intake fixtures, and tests. So:
 
-1. **Merge + deploy EmpireVu:** merge `feat/boatnames-company-intake` -> main and deploy — this
+1. **Merge + deploy Everdoer:** merge `feat/boatnames-company-intake` -> main and deploy — this
    ships the routing map (which resolves `sourceSite: boatnames` -> company `a1-boatnames`) and
    the intake fixtures. Without the deployed code map, leads resolve to no company -> `raw_leads`.
-2. **Run the seed** `syncoree/supabase/seeds/a1-boatnames.sql` against the live EmpireVu DB
+2. **Run the seed** `everdoer/supabase/seeds/a1-boatnames.sql` against the live Everdoer DB
    (creates the company row under `a1-group`, which already exists — the live A1 siblings are under
    it). **Sequencing:** deploy + seed BEFORE flipping the gate, or leads land in `raw_leads`.
-   (`docs/empirevu-seed-a1-boatnames.sql` here is a reference copy of that seed.)
-3. Set `EMPIREVU_INTAKE_URL` + `EMPIREVU_INTAKE_SECRET`; remove `EMPIREVU_INTAKE_DISABLED=1`.
+   (`docs/everdoer-seed-a1-boatnames.sql` here is a reference copy of that seed.)
+3. Set `EVERDOER_INTAKE_URL=https://api.everdoer.com/api/intake` + `EVERDOER_INTAKE_SECRET`;
+   remove `EVERDOER_INTAKE_DISABLED=1`.
 4. Replay the accumulated envelopes: `bun scripts/replay-outbox.ts skipped_gated` — diff a batch
    against the fixtures first; each should resolve to a CRM contact, not `raw_leads`. Rows written
    under the old holyship shape are already marked `superseded` (migration

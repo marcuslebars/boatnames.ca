@@ -21,7 +21,7 @@ envelope builder.
 - **Tax**: Stripe Tax computes GST/HST/PST by province — the exact Canadian tax
   surface, without us maintaining rate tables.
 - **System of record**: orders land natively in the **owned stack** (the `orders`
-  table) and forward to **EmpireVu** through the existing lead envelope. One system
+  table) and forward to **Everdoer** through the existing lead envelope. One system
   of record; the customer/order data already speaks our schema.
 - **Cost**: per-transaction fees; we build our own shipping-label / returns flow.
 
@@ -29,7 +29,7 @@ envelope builder.
 
 - **Buys** shipping labels, tax, and returns machinery out of the box.
 - **Cost**: a **second customer/order system of record** that does _not_ speak the
-  lead envelope — reconciling Shopify orders back into EmpireVu is ongoing glue, and
+  lead envelope — reconciling Shopify orders back into Everdoer is ongoing glue, and
   the CRM stops being the single source of truth. Heavier to operate for a
   single-product, made-to-order line.
 

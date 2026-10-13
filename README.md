@@ -49,7 +49,7 @@ Client (`VITE_`) variables:
 | `VITE_ERROR_ENDPOINT` | no       | If set, client errors are POSTed here (`{ message, stack, route, userAgent }`).             |
 
 Server-only variables (added with the backend) include the Supabase connection,
-the Resend API key, and the EmpireVu forward secret. They are documented in
+the Resend API key, and the Everdoer forward secret. They are documented in
 `.env.example` and validated at boot.
 
 ## Deploy target

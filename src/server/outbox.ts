@@ -1,4 +1,4 @@
-import { forwardToEmpireVu, type ForwardResult, type LeadEnvelope } from "./empirevu";
+import { forwardToEverdoer, type ForwardResult, type LeadEnvelope } from "./everdoer";
 import { supabaseAdmin } from "./supabase";
 
 /**
@@ -14,7 +14,7 @@ export async function insertOutbox(
 ): Promise<string | null> {
   const admin = supabaseAdmin();
   const { data, error } = await admin
-    .from("empirevu_outbox")
+    .from("everdoer_outbox")
     .insert({
       quote_request_id: quoteRequestId,
       idempotency_key: idempotencyKey,
@@ -41,7 +41,7 @@ export async function insertOrderOutbox(
 ): Promise<string | null> {
   const admin = supabaseAdmin();
   const { data, error } = await admin
-    .from("empirevu_outbox")
+    .from("everdoer_outbox")
     .insert({ order_id: orderId, idempotency_key: idempotencyKey, envelope, status: "pending" })
     .select("id")
     .single();
@@ -55,7 +55,7 @@ export async function insertOrderOutbox(
 export async function markOutbox(id: string, result: ForwardResult): Promise<void> {
   const admin = supabaseAdmin();
   const { error } = await admin
-    .from("empirevu_outbox")
+    .from("everdoer_outbox")
     .update({
       status: result.outcome,
       attempts: result.attempts,
@@ -74,6 +74,6 @@ export async function markOutbox(id: string, result: ForwardResult): Promise<voi
  * throwing, never affecting the visitor's already-returned success.
  */
 export async function forwardAndMark(outboxId: string, envelope: LeadEnvelope): Promise<void> {
-  const result = await forwardToEmpireVu(envelope);
+  const result = await forwardToEverdoer(envelope);
   await markOutbox(outboxId, result);
 }

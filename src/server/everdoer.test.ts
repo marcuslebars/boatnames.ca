@@ -1,0 +1,322 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import {
+  boatnamesOrderSource,
+  buildBoatnamesEnvelope,
+  buildBoatnamesOrderEnvelope,
+  forwardToEverdoer,
+  signEverdoerBody,
+  type BoatnamesLead,
+  type LeadEnvelope,
+} from "./everdoer";
+import { resetLegacyEnvWarningsForTests } from "./env";
+import { leadEnvelopeSchema } from "./lead-envelope-schema";
+import {
+  SAMPLE_SHIP_ACRYLIC,
+  SAMPLE_INSTALL_VINYL,
+  SAMPLE_ORDER,
+  SAMPLE_RECEIVED_AT,
+} from "./__fixtures__/boatnames-sample";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const fixture = (name: string) =>
+  JSON.parse(readFileSync(join(here, "__fixtures__", "lead-envelopes", name), "utf8"));
+
+describe("buildBoatnamesEnvelope matches the golden fixtures (drift guard)", () => {
+  it("ship + acrylic -> canonical envelope", () => {
+    expect(buildBoatnamesEnvelope(SAMPLE_SHIP_ACRYLIC, SAMPLE_RECEIVED_AT)).toEqual(
+      fixture("boatnames-ship-acrylic.json"),
+    );
+  });
+
+  it("install + vinyl -> canonical envelope", () => {
+    expect(buildBoatnamesEnvelope(SAMPLE_INSTALL_VINYL, SAMPLE_RECEIVED_AT)).toEqual(
+      fixture("boatnames-install-vinyl.json"),
+    );
+  });
+
+  it("ignores order-domain fields — they never leak into the lead envelope", () => {
+    // Phase 8 guard: a future order flow must not be able to push order-domain
+    // data into the lead envelope. The builder reads only known lead fields, so
+    // extra keys are dropped entirely and the output is byte-identical.
+    const withOrderJunk = {
+      ...SAMPLE_SHIP_ACRYLIC,
+      orderId: "ord_abc123",
+      status: "invoiced",
+      subtotalCents: 12345,
+      paymentProvider: "stripe",
+      externalPaymentRef: "pi_test_ref",
+    } as BoatnamesLead;
+    const env = buildBoatnamesEnvelope(withOrderJunk, SAMPLE_RECEIVED_AT);
+    expect(env).toEqual(buildBoatnamesEnvelope(SAMPLE_SHIP_ACRYLIC, SAMPLE_RECEIVED_AT));
+    expect(leadEnvelopeSchema.parse(env)).toEqual(env);
+    const serialized = JSON.stringify(env);
+    for (const leaked of ["ord_abc123", "subtotal", "paymentProvider", "pi_test_ref", "stripe"]) {
+      expect(serialized).not.toContain(leaked);
+    }
+  });
+
+  it("survives the canonical schema WITHOUT losing keys (nothing silently stripped)", () => {
+    // A plain z.object strips unknowns; if the builder ever emitted a field the
+    // schema doesn't know, the intake would store a hollow lead. Round-trip
+    // equality proves every field the builder emits has a home in the contract.
+    for (const lead of [SAMPLE_SHIP_ACRYLIC, SAMPLE_INSTALL_VINYL]) {
+      const env = buildBoatnamesEnvelope(lead, SAMPLE_RECEIVED_AT);
+      expect(leadEnvelopeSchema.parse(env)).toEqual(env);
+    }
+  });
+});
+
+describe("buildBoatnamesOrderEnvelope — paid-order forward (drift + contract)", () => {
+  it("matches the golden fixture", () => {
+    expect(buildBoatnamesOrderEnvelope(SAMPLE_ORDER, SAMPLE_RECEIVED_AT)).toEqual(
+      fixture("boatnames-order-paid.json"),
+    );
+  });
+
+  it("is schema-valid — the intake accepts it without stripping keys", () => {
+    const env = buildBoatnamesOrderEnvelope(SAMPLE_ORDER, SAMPLE_RECEIVED_AT);
+    expect(leadEnvelopeSchema.parse(env)).toEqual(env);
+  });
+
+  it("uses a distinct source tag + the canonical formType (no enum change)", () => {
+    const env = buildBoatnamesOrderEnvelope(SAMPLE_ORDER, SAMPLE_RECEIVED_AT);
+    expect(env.source).toBe("boatnames_order_paid");
+    expect(boatnamesOrderSource()).toBe("boatnames_order_paid");
+    expect(env.formType).toBe("quote");
+    expect(env.sourceSite).toBe("boatnames");
+  });
+
+  it("folds order id + amount into message, never structured/top-level keys", () => {
+    const env = buildBoatnamesOrderEnvelope(SAMPLE_ORDER, SAMPLE_RECEIVED_AT);
+    expect(env.message).toContain("ord_test_0001");
+    expect(env.message).toContain("$507 CAD");
+    expect(env).not.toHaveProperty("orderId");
+    expect(env).not.toHaveProperty("totalCents");
+    expect(env).not.toHaveProperty("lineItems");
+    expect(Object.keys(env).sort()).toEqual(
+      [
+        "contact",
+        "formType",
+        "message",
+        "meta",
+        "receivedAt",
+        "schemaVersion",
+        "source",
+        "sourceSite",
+      ].sort(),
+    );
+  });
+});
+
+describe("the canonical + boatnames fixtures are all schema-valid", () => {
+  for (const name of [
+    "boatnames-ship-acrylic.json",
+    "boatnames-install-vinyl.json",
+    "boatnames-order-paid.json",
+    "care-contact.json",
+    "care-booking.json",
+    "storage-quote.json",
+    "storage-contact-phone-only.json",
+  ]) {
+    it(name, () => {
+      expect(leadEnvelopeSchema.safeParse(fixture(name)).success).toBe(true);
+    });
+  }
+});
+
+// Every env var the forwarder reads, new + legacy. Cleared before AND after each
+// test so neither the ambient environment nor a previous test can leak in.
+const FORWARD_ENV = [
+  "EVERDOER_INTAKE_URL",
+  "EVERDOER_INTAKE_SECRET",
+  "EVERDOER_INTAKE_DISABLED",
+  // Rebrand shim (remove after one release once EVERDOER_* is set)
+  "EMPIREVU_INTAKE_URL",
+  "EMPIREVU_INTAKE_SECRET",
+  "EMPIREVU_INTAKE_DISABLED",
+];
+
+function clearForwardEnv() {
+  for (const k of FORWARD_ENV) delete process.env[k];
+  resetLegacyEnvWarningsForTests();
+}
+
+type FetchSpy = ReturnType<typeof okFetch>;
+function okFetch() {
+  return vi.fn((_url: string, _opts: RequestInit) =>
+    Promise.resolve({ ok: true, status: 200 } as Response),
+  );
+}
+
+describe("forwardToEverdoer is gated, additive, best-effort (mirrors the siblings)", () => {
+  const envelope: LeadEnvelope = buildBoatnamesEnvelope(SAMPLE_SHIP_ACRYLIC, SAMPLE_RECEIVED_AT);
+  const realFetch = globalThis.fetch;
+
+  beforeEach(clearForwardEnv);
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+    clearForwardEnv();
+    vi.restoreAllMocks();
+  });
+
+  it("skips (no call) when unconfigured", async () => {
+    const spy = vi.fn();
+    globalThis.fetch = spy as never;
+    const res = await forwardToEverdoer(envelope);
+    expect(spy).not.toHaveBeenCalled();
+    expect(res.outcome).toBe("skipped_gated");
+  });
+
+  it("skips (no call) when only the URL is set (no built-in default URL or secret)", async () => {
+    process.env.EVERDOER_INTAKE_URL = "https://api.everdoer.com/api/intake";
+    const spy = vi.fn();
+    globalThis.fetch = spy as never;
+    const res = await forwardToEverdoer(envelope);
+    expect(spy).not.toHaveBeenCalled();
+    expect(res.outcome).toBe("skipped_gated");
+  });
+
+  it("skips (no call) when disabled by the kill switch", async () => {
+    process.env.EVERDOER_INTAKE_URL = "https://hub.example/api/intake";
+    process.env.EVERDOER_INTAKE_SECRET = "s";
+    process.env.EVERDOER_INTAKE_DISABLED = "1";
+    const spy = vi.fn();
+    globalThis.fetch = spy as never;
+    const res = await forwardToEverdoer(envelope);
+    expect(spy).not.toHaveBeenCalled();
+    expect(res.outcome).toBe("skipped_gated");
+  });
+
+  it("signs + posts the exact bytes when configured", async () => {
+    process.env.EVERDOER_INTAKE_URL = "https://hub.example/api/intake";
+    process.env.EVERDOER_INTAKE_SECRET = "s";
+    const spy: FetchSpy = okFetch();
+    globalThis.fetch = spy as never;
+    const res = await forwardToEverdoer(envelope);
+    expect(spy).toHaveBeenCalledTimes(1);
+    const [url, opts] = spy.mock.calls[0];
+    expect(url).toBe("https://hub.example/api/intake");
+    expect((opts.headers as Record<string, string>)["x-everdoer-signature"]).toBe(
+      signEverdoerBody(opts.body as string, "s"),
+    );
+    expect(res.outcome).toBe("sent");
+  });
+
+  it("sends ONLY the new x-everdoer-* header names", async () => {
+    process.env.EVERDOER_INTAKE_URL = "https://api.everdoer.com/api/intake";
+    process.env.EVERDOER_INTAKE_SECRET = "s";
+    const spy: FetchSpy = okFetch();
+    globalThis.fetch = spy as never;
+    await forwardToEverdoer(envelope);
+    const headers = spy.mock.calls[0][1].headers as Record<string, string>;
+    expect(Object.keys(headers).sort()).toEqual(["Content-Type", "x-everdoer-signature"]);
+    expect(headers["x-everdoer-signature"]).toMatch(/^sha256=[0-9a-f]{64}$/);
+  });
+
+  it("never throws when the endpoint fails, and reports failed", async () => {
+    process.env.EVERDOER_INTAKE_URL = "https://hub.example/api/intake";
+    process.env.EVERDOER_INTAKE_SECRET = "s";
+    globalThis.fetch = (async () => {
+      throw new Error("network down");
+    }) as never;
+    const res = await forwardToEverdoer(envelope, 1);
+    expect(res.outcome).toBe("failed");
+  });
+
+  // Rebrand shim (remove after one release once EVERDOER_* is set)
+  describe("legacy EMPIREVU_* env fallback", () => {
+    it("new EVERDOER_* names win over the legacy ones, with no warning", async () => {
+      process.env.EVERDOER_INTAKE_URL = "https://api.everdoer.com/api/intake";
+      process.env.EVERDOER_INTAKE_SECRET = "new-secret";
+      process.env.EMPIREVU_INTAKE_URL = "https://legacy.example/api/intake";
+      process.env.EMPIREVU_INTAKE_SECRET = "old-secret";
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const spy: FetchSpy = okFetch();
+      globalThis.fetch = spy as never;
+      await forwardToEverdoer(envelope);
+      const [url, opts] = spy.mock.calls[0];
+      expect(url).toBe("https://api.everdoer.com/api/intake");
+      expect((opts.headers as Record<string, string>)["x-everdoer-signature"]).toBe(
+        signEverdoerBody(opts.body as string, "new-secret"),
+      );
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it("a new kill switch wins too (EVERDOER_INTAKE_DISABLED=1 over legacy unset)", async () => {
+      process.env.EMPIREVU_INTAKE_URL = "https://legacy.example/api/intake";
+      process.env.EMPIREVU_INTAKE_SECRET = "old-secret";
+      process.env.EVERDOER_INTAKE_DISABLED = "1";
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const spy = vi.fn();
+      globalThis.fetch = spy as never;
+      expect((await forwardToEverdoer(envelope)).outcome).toBe("skipped_gated");
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it("the legacy kill switch alone still gates the forward (deployed config keeps working)", async () => {
+      process.env.EMPIREVU_INTAKE_URL = "https://legacy.example/api/intake";
+      process.env.EMPIREVU_INTAKE_SECRET = "old-secret";
+      process.env.EMPIREVU_INTAKE_DISABLED = "1";
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const spy = vi.fn();
+      globalThis.fetch = spy as never;
+      expect((await forwardToEverdoer(envelope)).outcome).toBe("skipped_gated");
+      expect(spy).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith(
+        "[everdoer] using legacy env EMPIREVU_INTAKE_DISABLED; set EVERDOER_INTAKE_DISABLED",
+      );
+    });
+
+    it("old names still work, and each warns exactly once per process", async () => {
+      process.env.EMPIREVU_INTAKE_URL = "https://legacy.example/api/intake";
+      process.env.EMPIREVU_INTAKE_SECRET = "old-secret";
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const spy: FetchSpy = okFetch();
+      globalThis.fetch = spy as never;
+      await forwardToEverdoer(envelope);
+      await forwardToEverdoer(envelope);
+      expect(spy).toHaveBeenCalledTimes(2);
+      const [url, opts] = spy.mock.calls[0];
+      expect(url).toBe("https://legacy.example/api/intake");
+      const headers = opts.headers as Record<string, string>;
+      // Even on legacy env, only the new header name is sent.
+      expect(headers["x-everdoer-signature"]).toBe(
+        signEverdoerBody(opts.body as string, "old-secret"),
+      );
+      expect(warn.mock.calls.map((c) => c[0])).toEqual([
+        "[everdoer] using legacy env EMPIREVU_INTAKE_URL; set EVERDOER_INTAKE_URL",
+        "[everdoer] using legacy env EMPIREVU_INTAKE_SECRET; set EVERDOER_INTAKE_SECRET",
+      ]);
+    });
+
+    it("an empty new var falls through to the legacy one", async () => {
+      process.env.EVERDOER_INTAKE_URL = "";
+      process.env.EMPIREVU_INTAKE_URL = "https://legacy.example/api/intake";
+      process.env.EVERDOER_INTAKE_SECRET = "s";
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const spy: FetchSpy = okFetch();
+      globalThis.fetch = spy as never;
+      await forwardToEverdoer(envelope);
+      expect(spy.mock.calls[0][0]).toBe("https://legacy.example/api/intake");
+    });
+  });
+});
+
+describe("documented platform URL is the new Everdoer host", () => {
+  const envExample = readFileSync(join(here, "..", "..", ".env.example"), "utf8");
+
+  it(".env.example documents https://api.everdoer.com/api/intake", () => {
+    expect(envExample).toContain("https://api.everdoer.com/api/intake");
+  });
+
+  it(".env.example keeps the forward gated off by default", () => {
+    expect(envExample).toMatch(/^EVERDOER_INTAKE_DISABLED=1$/m);
+    expect(envExample).toMatch(/^EVERDOER_INTAKE_URL=$/m);
+    expect(envExample).toMatch(/^EVERDOER_INTAKE_SECRET=$/m);
+  });
+});

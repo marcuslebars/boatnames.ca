@@ -1,4 +1,4 @@
-import type { BoatnamesLead, BoatnamesOrder } from "../empirevu";
+import type { BoatnamesLead, BoatnamesOrder } from "../everdoer";
 
 /**
  * Canonical samples used to generate + pin the boatnames golden fixtures. Keep

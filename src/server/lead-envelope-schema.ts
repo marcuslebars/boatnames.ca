@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * The canonical lead envelope, schemaVersion 1 — copied VERBATIM from
- * syncoree/src/server/services/lead-intake/envelope.ts (the intake's source of
+ * everdoer/src/server/services/lead-intake/envelope.ts (the intake's source of
  * truth). Kept here only to guard drift locally: the fixture test asserts our
  * builder's output survives this schema WITHOUT losing keys (a plain z.object
  * strips unknowns, so an over-eager field would be silently dropped by the intake
